@@ -19,4 +19,10 @@ public non-sealed interface ClientInit extends RfbMessage {
             return shared(msg.shared());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ClientInit read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ClientInitImpl.read(in);
+    }
 }

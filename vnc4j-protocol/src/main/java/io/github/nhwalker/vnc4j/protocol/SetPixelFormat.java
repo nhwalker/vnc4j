@@ -19,4 +19,10 @@ public non-sealed interface SetPixelFormat extends ClientMessage {
             return pixelFormat(msg.pixelFormat());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static SetPixelFormat read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.SetPixelFormatImpl.read(in);
+    }
 }

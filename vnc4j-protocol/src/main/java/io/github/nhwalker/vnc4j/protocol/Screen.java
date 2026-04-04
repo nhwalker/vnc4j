@@ -29,4 +29,10 @@ public interface Screen {
             return id(msg.id()).x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height()).flags(msg.flags());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static Screen read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ScreenImpl.read(in);
+    }
 }

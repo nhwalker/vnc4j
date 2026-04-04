@@ -30,4 +30,10 @@ public non-sealed interface GiiPointerMoveEvent extends GiiEvent {
                     .wheel(msg.wheel());
         }
     }
+
+    void write(java.io.OutputStream out, boolean bigEndian) throws java.io.IOException;
+
+    static GiiPointerMoveEvent read(java.io.InputStream in, boolean bigEndian) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiPointerMoveEventImpl.read(in, bigEndian);
+    }
 }

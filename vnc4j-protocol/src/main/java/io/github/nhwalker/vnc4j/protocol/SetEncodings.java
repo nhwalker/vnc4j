@@ -21,4 +21,10 @@ public non-sealed interface SetEncodings extends ClientMessage {
             return encodings(msg.encodings());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static SetEncodings read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.SetEncodingsImpl.read(in);
+    }
 }

@@ -21,4 +21,10 @@ public non-sealed interface XvpServerMessage extends ServerMessage {
             return xvpVersion(msg.xvpVersion()).xvpMessageCode(msg.xvpMessageCode());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static XvpServerMessage read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.XvpServerMessageImpl.read(in);
+    }
 }

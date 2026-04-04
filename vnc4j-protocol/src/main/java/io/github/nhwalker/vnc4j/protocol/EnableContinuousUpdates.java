@@ -27,4 +27,10 @@ public non-sealed interface EnableContinuousUpdates extends ClientMessage {
             return enable(msg.enable()).x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static EnableContinuousUpdates read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.EnableContinuousUpdatesImpl.read(in);
+    }
 }

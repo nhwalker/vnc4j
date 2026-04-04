@@ -21,4 +21,10 @@ public non-sealed interface SecurityResult extends RfbMessage {
             return status(msg.status()).failureReason(msg.failureReason());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static SecurityResult read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.SecurityResultImpl.read(in);
+    }
 }

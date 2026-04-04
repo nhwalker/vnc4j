@@ -21,4 +21,16 @@ public non-sealed interface FramebufferUpdate extends ServerMessage {
             return rectangles(msg.rectangles());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    /**
+     * Reads a FramebufferUpdate message from the stream. The {@code pixelFormat} is
+     * forwarded to each {@link RfbRectangle#read} call so encoding-specific parsers
+     * know the bytes-per-pixel and colour depth.
+     */
+    static FramebufferUpdate read(java.io.InputStream in, PixelFormat pixelFormat)
+            throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.FramebufferUpdateImpl.read(in, pixelFormat);
+    }
 }

@@ -19,4 +19,10 @@ public non-sealed interface QemuAudioServerData extends QemuAudioServerMessage {
             return data(msg.data());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static QemuAudioServerData read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.QemuAudioServerDataImpl.read(in);
+    }
 }

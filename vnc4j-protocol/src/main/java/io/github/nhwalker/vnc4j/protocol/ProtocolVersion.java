@@ -21,4 +21,10 @@ public non-sealed interface ProtocolVersion extends RfbMessage {
             return major(msg.major()).minor(msg.minor());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ProtocolVersion read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ProtocolVersionImpl.read(in);
+    }
 }

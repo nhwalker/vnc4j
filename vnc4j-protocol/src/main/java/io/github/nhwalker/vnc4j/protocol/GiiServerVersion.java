@@ -23,4 +23,10 @@ public non-sealed interface GiiServerVersion extends GiiServerMessage {
             return bigEndian(msg.bigEndian()).maximumVersion(msg.maximumVersion()).minimumVersion(msg.minimumVersion());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static GiiServerVersion read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiServerVersionImpl.read(in);
+    }
 }

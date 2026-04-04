@@ -42,4 +42,10 @@ public interface GiiValuator {
                     .siShift(msg.siShift());
         }
     }
+
+    void write(java.io.OutputStream out, boolean bigEndian) throws java.io.IOException;
+
+    static GiiValuator read(java.io.InputStream in, boolean bigEndian) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiValuatorImpl.read(in, bigEndian);
+    }
 }

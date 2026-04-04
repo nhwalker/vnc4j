@@ -16,4 +16,10 @@ public non-sealed interface QemuAudioServerBegin extends QemuAudioServerMessage 
             return this;
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static QemuAudioServerBegin read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.QemuAudioServerBeginImpl.read(in);
+    }
 }
