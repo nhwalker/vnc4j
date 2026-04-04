@@ -1,52 +1,36 @@
 package io.github.nhwalker.vnc4j.protocol;
 
-import io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleImpl;
-
-/** Represents a single encoded rectangle within a FramebufferUpdate. */
-public interface RfbRectangle {
-    static Builder newBuilder() {
-        return new RfbRectangleImpl.BuilderImpl();
-    }
+/**
+ * Sealed base interface for a single encoded rectangle within a FramebufferUpdate.
+ *
+ * <p>Use {@link #read(java.io.InputStream, PixelFormat)} to deserialise; the method reads
+ * the 10-byte rectangle header and the encoding-specific payload automatically.
+ * Each concrete subtype exposes fully typed fields for its payload.
+ */
+public sealed interface RfbRectangle
+        permits RfbRectangleRaw, RfbRectangleCopyRect, RfbRectangleRre, RfbRectangleCoRre,
+                RfbRectangleHextile, RfbRectangleZlib, RfbRectangleTight, RfbRectangleZlibHex,
+                RfbRectangleZrle, RfbRectangleJpeg, RfbRectangleH264, RfbRectangleTightPng,
+                RfbRectangleDesktopSize, RfbRectangleLastRect, RfbRectangleCursor,
+                RfbRectangleXCursor, RfbRectangleExtendedDesktopSize, RfbRectangleCursorWithAlpha {
 
     int x();
     int y();
     int width();
     int height();
     int encodingType();
-    byte[] data();
-
-    interface Builder {
-        Builder x(int x);
-        Builder y(int y);
-        Builder width(int width);
-        Builder height(int height);
-        Builder encodingType(int encodingType);
-        Builder data(byte[] data);
-
-        RfbRectangle build();
-
-        default Builder from(RfbRectangle msg) {
-            return x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height())
-                    .encodingType(msg.encodingType()).data(msg.data());
-        }
-    }
 
     void write(java.io.OutputStream out) throws java.io.IOException;
 
     /**
-     * Reads an RfbRectangle header (x, y, width, height, encodingType) from the stream,
-     * then reads {@code dataLength} bytes of encoding-specific payload into the data field.
-     * The caller is responsible for determining the data length based on the encoding type.
+     * Reads a rectangle from the stream: first the 10-byte header (x, y, width, height,
+     * encodingType), then the encoding-specific payload. The returned object is an
+     * instance of the appropriate sealed subtype.
+     *
+     * @throws UnsupportedOperationException if the encoding type is JPEG (21) or unknown
      */
-    static RfbRectangle read(java.io.InputStream in, int dataLength) throws java.io.IOException {
-        return io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleImpl.read(in, dataLength);
-    }
-
-    /**
-     * Reads only the rectangle header (x, y, width, height, encodingType).
-     * The data field will be an empty byte array.
-     */
-    static RfbRectangle read(java.io.InputStream in) throws java.io.IOException {
-        return io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleImpl.read(in, 0);
+    static RfbRectangle read(java.io.InputStream in, PixelFormat pixelFormat)
+            throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleDispatch.read(in, pixelFormat);
     }
 }

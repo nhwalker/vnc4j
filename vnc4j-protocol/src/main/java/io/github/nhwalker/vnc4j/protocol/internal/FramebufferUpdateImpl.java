@@ -1,6 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
 import io.github.nhwalker.vnc4j.protocol.FramebufferUpdate;
+import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangle;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -24,13 +25,13 @@ public record FramebufferUpdateImpl(List<RfbRectangle> rectangles) implements Fr
         }
     }
 
-    public static FramebufferUpdate read(InputStream in) throws IOException {
+    public static FramebufferUpdate read(InputStream in, PixelFormat pixelFormat) throws IOException {
         DataInputStream dis = new DataInputStream(in);
         dis.readUnsignedByte(); // padding
         int count = dis.readUnsignedShort();
         List<RfbRectangle> rects = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
-            rects.add(RfbRectangle.read(in));
+            rects.add(RfbRectangle.read(in, pixelFormat));
         }
         return new FramebufferUpdateImpl(rects);
     }
