@@ -1,0 +1,21 @@
+plugins {
+    id 'java'
+}
+
+subprojects {
+    apply plugin: 'java'
+
+    group = 'io.github.nhwalker'
+    version = '0.1.0-SNAPSHOT'
+
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
+        modularity.inferModulePath = true
+    }
+
+    repositories {
+        mavenCentral()
+    }
+}
