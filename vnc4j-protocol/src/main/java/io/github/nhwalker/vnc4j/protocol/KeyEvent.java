@@ -4,4 +4,15 @@ package io.github.nhwalker.vnc4j.protocol;
 public non-sealed interface KeyEvent extends ClientMessage {
     boolean down();
     int key();
+
+    interface Builder {
+        Builder down(boolean down);
+        Builder key(int key);
+
+        KeyEvent build();
+
+        default Builder from(KeyEvent msg) {
+            return down(msg.down()).key(msg.key());
+        }
+    }
 }

@@ -7,4 +7,18 @@ public non-sealed interface EnableContinuousUpdates extends ClientMessage {
     int y();
     int width();
     int height();
+
+    interface Builder {
+        Builder enable(boolean enable);
+        Builder x(int x);
+        Builder y(int y);
+        Builder width(int width);
+        Builder height(int height);
+
+        EnableContinuousUpdates build();
+
+        default Builder from(EnableContinuousUpdates msg) {
+            return enable(msg.enable()).x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height());
+        }
+    }
 }

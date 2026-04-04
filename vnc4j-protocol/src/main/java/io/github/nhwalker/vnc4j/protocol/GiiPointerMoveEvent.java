@@ -8,4 +8,20 @@ public non-sealed interface GiiPointerMoveEvent extends GiiEvent {
     int y();
     int z();
     int wheel();
+
+    interface Builder {
+        Builder eventType(int eventType);
+        Builder deviceOrigin(long deviceOrigin);
+        Builder x(int x);
+        Builder y(int y);
+        Builder z(int z);
+        Builder wheel(int wheel);
+
+        GiiPointerMoveEvent build();
+
+        default Builder from(GiiPointerMoveEvent msg) {
+            return eventType(msg.eventType()).deviceOrigin(msg.deviceOrigin()).x(msg.x()).y(msg.y()).z(msg.z())
+                    .wheel(msg.wheel());
+        }
+    }
 }

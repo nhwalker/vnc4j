@@ -7,4 +7,18 @@ public non-sealed interface FramebufferUpdateRequest extends ClientMessage {
     int y();
     int width();
     int height();
+
+    interface Builder {
+        Builder incremental(boolean incremental);
+        Builder x(int x);
+        Builder y(int y);
+        Builder width(int width);
+        Builder height(int height);
+
+        FramebufferUpdateRequest build();
+
+        default Builder from(FramebufferUpdateRequest msg) {
+            return incremental(msg.incremental()).x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height());
+        }
+    }
 }
