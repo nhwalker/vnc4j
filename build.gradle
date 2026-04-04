@@ -1,12 +1,12 @@
 plugins {
-    java
+    id 'java'
 }
 
 subprojects {
-    apply(plugin = "java")
+    apply plugin: 'java'
 
-    group = "io.github.nhwalker"
-    version = "0.1.0-SNAPSHOT"
+    group = 'io.github.nhwalker'
+    version = '0.1.0-SNAPSHOT'
 
     java {
         toolchain {

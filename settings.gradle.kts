@@ -1,4 +1,0 @@
-rootProject.name = "vnc4j"
-
-include("vnc4j-protocol")
-include("vnc4j-swing")
