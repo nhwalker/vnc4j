@@ -7,4 +7,16 @@ public non-sealed interface SetDesktopSize extends ClientMessage {
     int width();
     int height();
     List<Screen> screens();
+
+    interface Builder {
+        Builder width(int width);
+        Builder height(int height);
+        Builder screens(List<Screen> screens);
+
+        SetDesktopSize build();
+
+        default Builder from(SetDesktopSize msg) {
+            return width(msg.width()).height(msg.height()).screens(msg.screens());
+        }
+    }
 }

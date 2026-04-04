@@ -6,4 +6,15 @@ import java.util.List;
 public non-sealed interface SetColourMapEntries extends ServerMessage {
     int firstColour();
     List<ColourMapEntry> colours();
+
+    interface Builder {
+        Builder firstColour(int firstColour);
+        Builder colours(List<ColourMapEntry> colours);
+
+        SetColourMapEntries build();
+
+        default Builder from(SetColourMapEntries msg) {
+            return firstColour(msg.firstColour()).colours(msg.colours());
+        }
+    }
 }

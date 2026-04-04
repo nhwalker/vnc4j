@@ -8,4 +8,20 @@ public interface RfbRectangle {
     int height();
     int encodingType();
     byte[] data();
+
+    interface Builder {
+        Builder x(int x);
+        Builder y(int y);
+        Builder width(int width);
+        Builder height(int height);
+        Builder encodingType(int encodingType);
+        Builder data(byte[] data);
+
+        RfbRectangle build();
+
+        default Builder from(RfbRectangle msg) {
+            return x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height())
+                    .encodingType(msg.encodingType()).data(msg.data());
+        }
+    }
 }

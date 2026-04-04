@@ -4,4 +4,15 @@ package io.github.nhwalker.vnc4j.protocol;
 public non-sealed interface SecurityResult extends RfbMessage {
     int status();
     String failureReason();
+
+    interface Builder {
+        Builder status(int status);
+        Builder failureReason(String failureReason);
+
+        SecurityResult build();
+
+        default Builder from(SecurityResult msg) {
+            return status(msg.status()).failureReason(msg.failureReason());
+        }
+    }
 }

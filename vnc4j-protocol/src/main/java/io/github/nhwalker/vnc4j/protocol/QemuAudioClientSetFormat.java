@@ -5,4 +5,16 @@ public non-sealed interface QemuAudioClientSetFormat extends QemuAudioClientMess
     int sampleFormat();
     int nchannels();
     long frequency();
+
+    interface Builder {
+        Builder sampleFormat(int sampleFormat);
+        Builder nchannels(int nchannels);
+        Builder frequency(long frequency);
+
+        QemuAudioClientSetFormat build();
+
+        default Builder from(QemuAudioClientSetFormat msg) {
+            return sampleFormat(msg.sampleFormat()).nchannels(msg.nchannels()).frequency(msg.frequency());
+        }
+    }
 }
