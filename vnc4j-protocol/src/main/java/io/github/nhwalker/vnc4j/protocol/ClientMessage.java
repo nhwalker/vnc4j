@@ -5,4 +5,6 @@ public sealed interface ClientMessage extends RfbMessage
         permits SetPixelFormat, SetEncodings, FramebufferUpdateRequest, KeyEvent,
                 PointerEvent, ClientCutText, EnableContinuousUpdates, ClientFence,
                 XvpClientMessage, SetDesktopSize, GiiClientMessage, QemuClientMessage {
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
 }
