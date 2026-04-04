@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.ServerInitImpl;
+
 /** Server initialisation message describing the framebuffer and desktop name. */
 public non-sealed interface ServerInit extends RfbMessage {
+    static Builder newBuilder() {
+        return new ServerInitImpl.BuilderImpl();
+    }
+
     int framebufferWidth();
     int framebufferHeight();
     PixelFormat pixelFormat();

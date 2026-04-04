@@ -1,9 +1,15 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.FramebufferUpdateImpl;
+
 import java.util.List;
 
 /** Server message delivering one or more encoded rectangles as a framebuffer update. */
 public non-sealed interface FramebufferUpdate extends ServerMessage {
+    static Builder newBuilder() {
+        return new FramebufferUpdateImpl.BuilderImpl();
+    }
+
     List<RfbRectangle> rectangles();
 
     interface Builder {

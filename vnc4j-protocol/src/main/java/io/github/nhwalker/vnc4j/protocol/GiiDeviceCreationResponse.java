@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiDeviceCreationResponseImpl;
+
 /** GII server response to a device creation request, carrying the assigned device origin (0=failure). */
 public non-sealed interface GiiDeviceCreationResponse extends GiiServerMessage {
+    static Builder newBuilder() {
+        return new GiiDeviceCreationResponseImpl.BuilderImpl();
+    }
+
     boolean bigEndian();
     long deviceOrigin();
 

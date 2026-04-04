@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiValuatorImpl;
+
 /** Describes a single analog valuator (axis) on a GII input device. */
 public interface GiiValuator {
+    static Builder newBuilder() {
+        return new GiiValuatorImpl.BuilderImpl();
+    }
+
     long index();
     String longName();
     String shortName();

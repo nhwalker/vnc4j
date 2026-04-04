@@ -1,9 +1,15 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiDeviceCreationImpl;
+
 import java.util.List;
 
 /** GII client message requesting creation of a virtual input device. */
 public non-sealed interface GiiDeviceCreation extends GiiClientMessage {
+    static Builder newBuilder() {
+        return new GiiDeviceCreationImpl.BuilderImpl();
+    }
+
     boolean bigEndian();
     String deviceName();
     long vendorId();

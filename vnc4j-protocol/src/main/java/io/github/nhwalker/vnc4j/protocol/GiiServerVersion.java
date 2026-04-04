@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiServerVersionImpl;
+
 /** GII server version negotiation response advertising the supported version range. */
 public non-sealed interface GiiServerVersion extends GiiServerMessage {
+    static Builder newBuilder() {
+        return new GiiServerVersionImpl.BuilderImpl();
+    }
+
     boolean bigEndian();
     int maximumVersion();
     int minimumVersion();

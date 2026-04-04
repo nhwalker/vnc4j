@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.QemuExtendedKeyEventImpl;
+
 /** QEMU extended key event carrying an X11 keysym and an XT scancode. */
 public non-sealed interface QemuExtendedKeyEvent extends QemuClientMessage {
+    static Builder newBuilder() {
+        return new QemuExtendedKeyEventImpl.BuilderImpl();
+    }
+
     int downFlag();
     int keysym();
     int keycode();

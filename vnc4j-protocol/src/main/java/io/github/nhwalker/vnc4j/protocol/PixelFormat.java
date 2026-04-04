@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.PixelFormatImpl;
+
 /** Describes the pixel encoding format used in a VNC session. */
 public interface PixelFormat {
+    static Builder newBuilder() {
+        return new PixelFormatImpl.BuilderImpl();
+    }
+
     int bitsPerPixel();
     int depth();
     boolean bigEndian();

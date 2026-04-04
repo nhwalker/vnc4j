@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiPointerMoveEventImpl;
+
 /** A GII pointer movement event (eventType 8=relative, 9=absolute). */
 public non-sealed interface GiiPointerMoveEvent extends GiiEvent {
+    static Builder newBuilder() {
+        return new GiiPointerMoveEventImpl.BuilderImpl();
+    }
+
     int eventType();
     long deviceOrigin();
     int x();

@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiKeyEventImpl;
+
 /** A GII keyboard press, release, or repeat event (eventType 5=press, 6=release, 7=repeat). */
 public non-sealed interface GiiKeyEvent extends GiiEvent {
+    static Builder newBuilder() {
+        return new GiiKeyEventImpl.BuilderImpl();
+    }
+
     int eventType();
     long deviceOrigin();
     long modifiers();

@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.PointerEventImpl;
+
 /** Client pointer (mouse) position and button-state event. */
 public non-sealed interface PointerEvent extends ClientMessage {
+    static Builder newBuilder() {
+        return new PointerEventImpl.BuilderImpl();
+    }
+
     int buttonMask();
     int x();
     int y();

@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.GiiDeviceDestructionImpl;
+
 /** GII client message requesting destruction of a previously created virtual input device. */
 public non-sealed interface GiiDeviceDestruction extends GiiClientMessage {
+    static Builder newBuilder() {
+        return new GiiDeviceDestructionImpl.BuilderImpl();
+    }
+
     boolean bigEndian();
     long deviceOrigin();
 
