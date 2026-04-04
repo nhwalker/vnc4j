@@ -66,18 +66,18 @@ public final class RfbRectangleImpl implements RfbRectangle {
         }
     }
 
-    /**
-     * Reads only the rectangle header (x, y, width, height, encodingType).
-     * The data field is set to an empty byte array; encoding-specific data must be handled separately.
-     */
-    public static RfbRectangle read(InputStream in) throws IOException {
+    public static RfbRectangle read(InputStream in, int dataLength) throws IOException {
         DataInputStream dis = new DataInputStream(in);
         int x = dis.readUnsignedShort();
         int y = dis.readUnsignedShort();
         int width = dis.readUnsignedShort();
         int height = dis.readUnsignedShort();
         int encodingType = dis.readInt();
-        return new RfbRectangleImpl(x, y, width, height, encodingType, new byte[0]);
+        byte[] data = new byte[dataLength];
+        if (dataLength > 0) {
+            dis.readFully(data);
+        }
+        return new RfbRectangleImpl(x, y, width, height, encodingType, data);
     }
 
     public static final class BuilderImpl implements RfbRectangle.Builder {
