@@ -28,4 +28,10 @@ public non-sealed interface GiiValuatorEvent extends GiiEvent {
                     .values(msg.values());
         }
     }
+
+    void write(java.io.OutputStream out, boolean bigEndian) throws java.io.IOException;
+
+    static GiiValuatorEvent read(java.io.InputStream in, boolean bigEndian) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiValuatorEventImpl.read(in, bigEndian);
+    }
 }

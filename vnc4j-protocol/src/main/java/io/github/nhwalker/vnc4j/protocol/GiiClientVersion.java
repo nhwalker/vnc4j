@@ -21,4 +21,10 @@ public non-sealed interface GiiClientVersion extends GiiClientMessage {
             return bigEndian(msg.bigEndian()).version(msg.version());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static GiiClientVersion read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiClientVersionImpl.read(in);
+    }
 }

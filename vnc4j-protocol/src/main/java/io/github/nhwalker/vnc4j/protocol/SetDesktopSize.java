@@ -25,4 +25,10 @@ public non-sealed interface SetDesktopSize extends ClientMessage {
             return width(msg.width()).height(msg.height()).screens(msg.screens());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static SetDesktopSize read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.SetDesktopSizeImpl.read(in);
+    }
 }

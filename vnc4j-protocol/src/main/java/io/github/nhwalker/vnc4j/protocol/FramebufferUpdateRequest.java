@@ -27,4 +27,10 @@ public non-sealed interface FramebufferUpdateRequest extends ClientMessage {
             return incremental(msg.incremental()).x(msg.x()).y(msg.y()).width(msg.width()).height(msg.height());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static FramebufferUpdateRequest read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.FramebufferUpdateRequestImpl.read(in);
+    }
 }

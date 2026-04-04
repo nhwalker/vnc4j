@@ -21,4 +21,10 @@ public non-sealed interface ClientFence extends ClientMessage {
             return flags(msg.flags()).payload(msg.payload());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ClientFence read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ClientFenceImpl.read(in);
+    }
 }

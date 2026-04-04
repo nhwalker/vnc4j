@@ -21,4 +21,10 @@ public non-sealed interface ServerFence extends ServerMessage {
             return flags(msg.flags()).payload(msg.payload());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ServerFence read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ServerFenceImpl.read(in);
+    }
 }

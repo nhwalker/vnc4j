@@ -19,4 +19,10 @@ public non-sealed interface SecurityTypeSelection extends RfbMessage {
             return securityType(msg.securityType());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static SecurityTypeSelection read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.SecurityTypeSelectionImpl.read(in);
+    }
 }

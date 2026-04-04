@@ -19,4 +19,10 @@ public non-sealed interface ServerCutText extends ServerMessage {
             return text(msg.text());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ServerCutText read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ServerCutTextImpl.read(in);
+    }
 }

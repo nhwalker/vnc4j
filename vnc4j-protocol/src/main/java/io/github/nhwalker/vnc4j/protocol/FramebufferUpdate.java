@@ -21,4 +21,10 @@ public non-sealed interface FramebufferUpdate extends ServerMessage {
             return rectangles(msg.rectangles());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static FramebufferUpdate read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.FramebufferUpdateImpl.read(in);
+    }
 }

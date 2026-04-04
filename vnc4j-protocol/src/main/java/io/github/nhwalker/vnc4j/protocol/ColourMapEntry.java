@@ -23,4 +23,10 @@ public interface ColourMapEntry {
             return red(msg.red()).green(msg.green()).blue(msg.blue());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ColourMapEntry read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ColourMapEntryImpl.read(in);
+    }
 }

@@ -23,4 +23,10 @@ public non-sealed interface PointerEvent extends ClientMessage {
             return buttonMask(msg.buttonMask()).x(msg.x()).y(msg.y());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static PointerEvent read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.PointerEventImpl.read(in);
+    }
 }

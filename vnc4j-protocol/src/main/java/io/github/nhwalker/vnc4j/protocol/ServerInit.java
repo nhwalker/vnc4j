@@ -26,4 +26,10 @@ public non-sealed interface ServerInit extends RfbMessage {
                     .pixelFormat(msg.pixelFormat()).name(msg.name());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ServerInit read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ServerInitImpl.read(in);
+    }
 }

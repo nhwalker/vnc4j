@@ -21,4 +21,10 @@ public non-sealed interface KeyEvent extends ClientMessage {
             return down(msg.down()).key(msg.key());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static KeyEvent read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.KeyEventImpl.read(in);
+    }
 }

@@ -23,4 +23,10 @@ public non-sealed interface GiiInjectEvents extends GiiClientMessage {
             return bigEndian(msg.bigEndian()).events(msg.events());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static GiiInjectEvents read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiInjectEventsImpl.read(in);
+    }
 }

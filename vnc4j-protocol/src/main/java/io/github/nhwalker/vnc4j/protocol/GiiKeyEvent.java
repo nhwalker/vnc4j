@@ -30,4 +30,10 @@ public non-sealed interface GiiKeyEvent extends GiiEvent {
                     .symbol(msg.symbol()).label(msg.label()).button(msg.button());
         }
     }
+
+    void write(java.io.OutputStream out, boolean bigEndian) throws java.io.IOException;
+
+    static GiiKeyEvent read(java.io.InputStream in, boolean bigEndian) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiKeyEventImpl.read(in, bigEndian);
+    }
 }

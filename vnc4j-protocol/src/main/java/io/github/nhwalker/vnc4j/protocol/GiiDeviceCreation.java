@@ -37,4 +37,10 @@ public non-sealed interface GiiDeviceCreation extends GiiClientMessage {
                     .numButtons(msg.numButtons()).valuators(msg.valuators());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static GiiDeviceCreation read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiDeviceCreationImpl.read(in);
+    }
 }

@@ -23,4 +23,10 @@ public non-sealed interface QemuAudioClientSetFormat extends QemuAudioClientMess
             return sampleFormat(msg.sampleFormat()).nchannels(msg.nchannels()).frequency(msg.frequency());
         }
     }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static QemuAudioClientSetFormat read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.QemuAudioClientSetFormatImpl.read(in);
+    }
 }

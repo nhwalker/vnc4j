@@ -23,4 +23,10 @@ public non-sealed interface GiiPointerButtonEvent extends GiiEvent {
             return eventType(msg.eventType()).deviceOrigin(msg.deviceOrigin()).buttonNumber(msg.buttonNumber());
         }
     }
+
+    void write(java.io.OutputStream out, boolean bigEndian) throws java.io.IOException;
+
+    static GiiPointerButtonEvent read(java.io.InputStream in, boolean bigEndian) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.GiiPointerButtonEventImpl.read(in, bigEndian);
+    }
 }
