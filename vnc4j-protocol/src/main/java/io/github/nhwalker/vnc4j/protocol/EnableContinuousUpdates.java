@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.EnableContinuousUpdatesImpl;
+
 /** Client message to enable or disable continuous framebuffer updates for a region. */
 public non-sealed interface EnableContinuousUpdates extends ClientMessage {
+    static Builder newBuilder() {
+        return new EnableContinuousUpdatesImpl.BuilderImpl();
+    }
+
     boolean enable();
     int x();
     int y();

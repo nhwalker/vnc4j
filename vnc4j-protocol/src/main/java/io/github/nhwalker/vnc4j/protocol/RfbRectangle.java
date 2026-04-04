@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleImpl;
+
 /** Represents a single encoded rectangle within a FramebufferUpdate. */
 public interface RfbRectangle {
+    static Builder newBuilder() {
+        return new RfbRectangleImpl.BuilderImpl();
+    }
+
     int x();
     int y();
     int width();

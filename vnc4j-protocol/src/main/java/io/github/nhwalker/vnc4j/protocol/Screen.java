@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.ScreenImpl;
+
 /** Represents a single screen in a multi-monitor desktop layout. */
 public interface Screen {
+    static Builder newBuilder() {
+        return new ScreenImpl.BuilderImpl();
+    }
+
     long id();
     int x();
     int y();

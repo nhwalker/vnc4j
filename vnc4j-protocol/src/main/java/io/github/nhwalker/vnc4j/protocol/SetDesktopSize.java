@@ -1,9 +1,15 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.SetDesktopSizeImpl;
+
 import java.util.List;
 
 /** Client message requesting a desktop resize with a new set of screen layouts. */
 public non-sealed interface SetDesktopSize extends ClientMessage {
+    static Builder newBuilder() {
+        return new SetDesktopSizeImpl.BuilderImpl();
+    }
+
     int width();
     int height();
     List<Screen> screens();

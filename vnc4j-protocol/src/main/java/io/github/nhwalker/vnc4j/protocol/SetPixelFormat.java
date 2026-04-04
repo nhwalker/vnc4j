@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.SetPixelFormatImpl;
+
 /** Client message instructing the server to use a specific pixel format. */
 public non-sealed interface SetPixelFormat extends ClientMessage {
+    static Builder newBuilder() {
+        return new SetPixelFormatImpl.BuilderImpl();
+    }
+
     PixelFormat pixelFormat();
 
     interface Builder {

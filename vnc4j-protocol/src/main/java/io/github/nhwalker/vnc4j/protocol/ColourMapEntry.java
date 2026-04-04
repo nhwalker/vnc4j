@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.ColourMapEntryImpl;
+
 /** A single RGB entry in a colour map (palette). */
 public interface ColourMapEntry {
+    static Builder newBuilder() {
+        return new ColourMapEntryImpl.BuilderImpl();
+    }
+
     int red();
     int green();
     int blue();

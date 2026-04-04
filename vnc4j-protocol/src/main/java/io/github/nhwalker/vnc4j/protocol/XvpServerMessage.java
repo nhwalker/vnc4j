@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.XvpServerMessageImpl;
+
 /** Server XVP message reporting power management capability or action result. */
 public non-sealed interface XvpServerMessage extends ServerMessage {
+    static Builder newBuilder() {
+        return new XvpServerMessageImpl.BuilderImpl();
+    }
+
     int xvpVersion();
     int xvpMessageCode();
 

@@ -1,7 +1,13 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.internal.ProtocolVersionImpl;
+
 /** RFB protocol version handshake message. */
 public non-sealed interface ProtocolVersion extends RfbMessage {
+    static Builder newBuilder() {
+        return new ProtocolVersionImpl.BuilderImpl();
+    }
+
     int major();
     int minor();
 
