@@ -538,4 +538,81 @@ class FinalGapsTest {
         assertEquals("TestLE", copy.deviceName());
         assertEquals(1L, copy.vendorId());
     }
+
+    // -----------------------------------------------------------------------
+    // RfbRectangleDispatch: default case (unknown encoding type)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Encoding type 999 is not in the dispatch switch → default →
+     * throws UnsupportedOperationException("Unknown encoding type: 999").
+     * This covers the 5 missed instructions in the default case.
+     */
+    @Test
+    void testRfbRectangleDispatch_unknownEncoding_throwsUOE() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        java.io.DataOutputStream dos = new java.io.DataOutputStream(baos);
+        dos.writeShort(0);    // x
+        dos.writeShort(0);    // y
+        dos.writeShort(4);    // width
+        dos.writeShort(4);    // height
+        dos.writeInt(999);    // encoding type = unknown
+        byte[] bytes = baos.toByteArray();
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> RfbRectangle.read(new ByteArrayInputStream(bytes), PF_32BPP));
+    }
+
+    // -----------------------------------------------------------------------
+    // ZlibHexTile SUBENC_ZLIB_RAW with non-null zlibRawData in write()
+    // -----------------------------------------------------------------------
+
+    /**
+     * The write() method's ternary {@code zlibRawData != null ? zlibRawData : new byte[0]}
+     * needs both branches covered. The null branch is covered by testZlibHexTile_zlibRaw_nullData_write;
+     * this test covers the non-null branch explicitly via write().
+     */
+    @Test
+    void testZlibHexTile_zlibRaw_nonNullData_write() throws IOException {
+        byte[] rawData = {0x78, (byte) 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01};
+        ZlibHexTile msg = ZlibHexTile.newBuilder()
+                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
+                .zlibRawData(rawData)
+                .build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        msg.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // subenc(1) + length(2) + data(8) = 11 bytes
+        assertEquals(11, bytes.length);
+        assertEquals((byte) ZlibHexTile.SUBENC_ZLIB_RAW, bytes[0]);
+    }
+
+    // -----------------------------------------------------------------------
+    // RfbRectangleDispatch.read: DataInputStream input (true branch of instanceof)
+    // -----------------------------------------------------------------------
+
+    /**
+     * RfbRectangleDispatch.read() has:
+     * {@code DataInputStream dis = (in instanceof DataInputStream d) ? d : new DataInputStream(in)}.
+     * When input IS a DataInputStream, the true branch reuses it directly.
+     * Passing a DataInputStream covers the 5 missed instructions in the true branch.
+     */
+    @Test
+    void testRfbRectangleDispatch_withDataInputStream() throws IOException {
+        // Build a simple raw rect (encoding 0) using a raw rectangle
+        RfbRectangleRaw rawRect = RfbRectangleRaw.newBuilder()
+                .x(0).y(0).width(1).height(1)
+                .pixels(new byte[]{0x11, 0x22, 0x33, 0x44}).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        rawRect.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // bytes[0..11] = rect header (x,y,w,h,enc); bytes[12..15] = pixels
+        // RfbRectangle.read expects the FULL rect bytes (header + payload)
+
+        // Pass a DataInputStream directly to trigger the instanceof true branch
+        java.io.DataInputStream dis = new java.io.DataInputStream(
+                new ByteArrayInputStream(bytes));
+        RfbRectangle result = RfbRectangle.read(dis, PF_32BPP);
+        assertInstanceOf(RfbRectangleRaw.class, result);
+    }
 }
