@@ -21,11 +21,20 @@ final class PixelDecoder {
     }
 
     /**
-     * Size of a TPIXEL used in Tight encoding: 3 bytes when bitsPerPixel is 32
-     * and the format uses true colour; otherwise the same as {@link #bytesPerPixel}.
+     * Size of a TPIXEL used in Tight encoding.
+     *
+     * <p>Per the spec, a TPIXEL is 3 bytes (rather than 4) only when
+     * {@code true-colour-flag} is set, {@code bits-per-pixel} is 32,
+     * {@code depth} is 24, and every RGB channel is exactly 8 bits wide
+     * ({@code redMax == greenMax == blueMax == 255}). Otherwise a TPIXEL
+     * is the same size as a full PIXEL ({@link #bytesPerPixel}).
      */
     static int tpixelSize(PixelFormat fmt) {
-        return (fmt.bitsPerPixel() == 32 && fmt.trueColour()) ? 3 : bytesPerPixel(fmt);
+        if (fmt.trueColour() && fmt.bitsPerPixel() == 32 && fmt.depth() == 24
+                && fmt.redMax() == 255 && fmt.greenMax() == 255 && fmt.blueMax() == 255) {
+            return 3;
+        }
+        return bytesPerPixel(fmt);
     }
 
     /**
@@ -63,7 +72,8 @@ final class PixelDecoder {
      * (the padding zero byte is omitted); otherwise it is treated as a full pixel.
      */
     static int decodeTPixel(byte[] data, int offset, PixelFormat fmt) {
-        if (fmt.bitsPerPixel() == 32 && fmt.trueColour()) {
+        if (fmt.trueColour() && fmt.bitsPerPixel() == 32 && fmt.depth() == 24
+                && fmt.redMax() == 255 && fmt.greenMax() == 255 && fmt.blueMax() == 255) {
             byte[] expanded = new byte[4];
             if (fmt.bigEndian()) {
                 // Full pixel is [pad, b1, b2, b3]; TPIXEL is [b1, b2, b3]

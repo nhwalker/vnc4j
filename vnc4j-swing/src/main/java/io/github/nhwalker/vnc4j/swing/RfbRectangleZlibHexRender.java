@@ -57,8 +57,14 @@ public final class RfbRectangleZlibHexRender implements RfbRectangleRender<RfbRe
 
                 int subenc = tile.subencoding();
 
+                if ((subenc & ZlibHexTile.SUBENC_RAW) != 0 && (subenc & ZlibHexTile.SUBENC_ZLIB_RAW) == 0) {
+                    // Plain uncompressed raw tile (hextile Raw without zlib).
+                    PixelDecoder.drawRawPixels(image, tileX, tileY, tileW, tileH,
+                            tile.rawPixels(), 0, pixelFormat);
+                    continue;
+                }
+
                 if ((subenc & ZlibHexTile.SUBENC_ZLIB_RAW) != 0) {
-                    int bpp = PixelDecoder.bytesPerPixel(pixelFormat);
                     byte[] raw = PixelDecoder.inflate(rawStream, tile.zlibRawData());
                     PixelDecoder.drawRawPixels(image, tileX, tileY, tileW, tileH, raw, 0, pixelFormat);
                     continue;
