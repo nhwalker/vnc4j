@@ -7,39 +7,40 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
- * Renders an {@link RfbRectangleZrle} (encoding type 16) onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleZrle} rectangles (encoding type 16) onto a
+ * {@link BufferedImage}.
  *
- * <p>The rectangle is divided into 64×64 tiles. Each tile is preceded by a single
- * subencoding byte that selects one of the following modes:
+ * <p>ZRLE uses a <em>single persistent zlib stream</em> across all rectangles.
+ * This renderer maintains that stream as a field so the decompressor's context
+ * is preserved between calls to {@link #render}.
+ *
+ * <p>Each rectangle is divided into 64×64 tiles, each prefixed by a subencoding byte:
  * <ul>
  *   <li>0 – Raw: one CPIXEL per pixel</li>
  *   <li>1 – Solid: fill tile with one CPIXEL</li>
- *   <li>2–16 – Packed palette: palette of N CPIXELs followed by packed bit indices</li>
- *   <li>128 – Plain RLE: (CPIXEL, run-length) pairs until tile is filled</li>
- *   <li>130–255 – Palette RLE: palette of (subencoding − 128) CPIXELs, then RLE
- *       with palette indices</li>
+ *   <li>2–16 – Packed palette: palette of N CPIXELs then packed bit indices</li>
+ *   <li>128 – Plain RLE: (CPIXEL, run-length) pairs</li>
+ *   <li>130–255 – Palette RLE: palette of (subencoding − 128) CPIXELs then RLE</li>
  * </ul>
  */
-public final class RfbRectangleZrleRender implements RfbRectangleRender {
+public final class RfbRectangleZrleRender implements RfbRectangleRender<RfbRectangleZrle> {
 
-    private final RfbRectangleZrle rectangle;
     private final PixelFormat pixelFormat;
+    private final Inflater inflater = new Inflater();
 
-    public RfbRectangleZrleRender(RfbRectangleZrle rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleZrleRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleZrle rectangle, BufferedImage image) {
         byte[] compressed = rectangle.zlibData();
         if (compressed == null || compressed.length == 0) return;
 
-        byte[] raw = decompress(compressed);
+        byte[] raw = PixelDecoder.inflate(inflater, compressed);
         DataInputStream in = new DataInputStream(new ByteArrayInputStream(raw));
 
         int cpxSize = PixelDecoder.cpixelSize(pixelFormat);
@@ -52,7 +53,7 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
                 for (int col = 0; col < cols; col++) {
                     int tileX = rectangle.x() + col * 64;
                     int tileY = rectangle.y() + row * 64;
-                    int tileW = Math.min(64, rectangle.x() + rectangle.width() - tileX);
+                    int tileW = Math.min(64, rectangle.x() + rectangle.width()  - tileX);
                     int tileH = Math.min(64, rectangle.y() + rectangle.height() - tileY);
 
                     int subenc = in.readUnsignedByte();
@@ -93,17 +94,14 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
             int tileX, int tileY, int tileW, int tileH, int cpxSize) throws IOException {
         byte[] buf = new byte[cpxSize];
         in.readFully(buf);
-        int argb = PixelDecoder.decodeCPixel(buf, 0, pixelFormat);
-        PixelDecoder.fillRect(image, tileX, tileY, tileW, tileH, argb);
+        PixelDecoder.fillRect(image, tileX, tileY, tileW, tileH,
+                PixelDecoder.decodeCPixel(buf, 0, pixelFormat));
     }
 
     private void renderPackedPalette(BufferedImage image, DataInputStream in,
             int tileX, int tileY, int tileW, int tileH,
             int paletteSize, int cpxSize) throws IOException {
-        // Read palette
         int[] palette = readPalette(in, paletteSize, cpxSize);
-
-        // Bits per palette index
         int bitsPerIdx = bitsForPaletteSize(paletteSize);
         int mask = (1 << bitsPerIdx) - 1;
 
@@ -120,8 +118,6 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
                 int idx = (accum >> bitsLeft) & mask;
                 argb[dx] = (idx < palette.length) ? palette[idx] : 0xFF000000;
             }
-            // Consume remaining bits to align to byte boundary
-            // (bitsLeft is already < bitsPerIdx; row padding is implicit)
             image.setRGB(tileX, tileY + dy, tileW, 1, argb, 0, tileW);
         }
     }
@@ -129,17 +125,13 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
     private void renderPlainRle(BufferedImage image, DataInputStream in,
             int tileX, int tileY, int tileW, int tileH, int cpxSize) throws IOException {
         byte[] buf = new byte[cpxSize];
-        int total = tileW * tileH;
+        int[] tile = new int[tileW * tileH];
         int pos = 0;
-        int[] tile = new int[total];
-
-        while (pos < total) {
+        while (pos < tile.length) {
             in.readFully(buf);
             int argb = PixelDecoder.decodeCPixel(buf, 0, pixelFormat);
             int run = readRunLength(in);
-            for (int i = 0; i < run && pos < total; i++) {
-                tile[pos++] = argb;
-            }
+            for (int i = 0; i < run && pos < tile.length; i++) tile[pos++] = argb;
         }
         image.setRGB(tileX, tileY, tileW, tileH, tile, 0, tileW);
     }
@@ -148,26 +140,15 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
             int tileX, int tileY, int tileW, int tileH,
             int paletteSize, int cpxSize) throws IOException {
         int[] palette = readPalette(in, paletteSize, cpxSize);
-
-        int total = tileW * tileH;
+        int[] tile = new int[tileW * tileH];
         int pos = 0;
-        int[] tile = new int[total];
-
-        while (pos < total) {
+        while (pos < tile.length) {
             int idxByte = in.readUnsignedByte();
             boolean isRun = (idxByte & 0x80) != 0;
             int idx = idxByte & 0x7F;
             int argb = (idx < palette.length) ? palette[idx] : 0xFF000000;
-
-            int run;
-            if (isRun) {
-                run = readRunLength(in);
-            } else {
-                run = 1;
-            }
-            for (int i = 0; i < run && pos < total; i++) {
-                tile[pos++] = argb;
-            }
+            int run = isRun ? readRunLength(in) : 1;
+            for (int i = 0; i < run && pos < tile.length; i++) tile[pos++] = argb;
         }
         image.setRGB(tileX, tileY, tileW, tileH, tile, 0, tileW);
     }
@@ -182,50 +163,16 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender {
         return palette;
     }
 
-    /**
-     * Reads a variable-length ZRLE run length. The run length is 1 plus the
-     * sum of all bytes read; reading stops when a byte less than 255 is encountered.
-     */
     private static int readRunLength(DataInputStream in) throws IOException {
         int run = 1;
         int b;
-        do {
-            b = in.readUnsignedByte();
-            run += b;
-        } while (b == 255);
+        do { b = in.readUnsignedByte(); run += b; } while (b == 255);
         return run;
     }
 
     private static int bitsForPaletteSize(int n) {
         if (n <= 2) return 1;
         if (n <= 4) return 2;
-        return 4; // n <= 16
-    }
-
-    private static byte[] decompress(byte[] compressed) {
-        // Decompress into a buffer sized generously; ZRLE decompressed data
-        // is at most 64 * 64 * 4 bytes per tile, but we do not know the tile
-        // count upfront. Use an expanding approach.
-        byte[] out = new byte[compressed.length * 8 + 4096];
-        Inflater inf = new Inflater();
-        inf.setInput(compressed);
-        int written = 0;
-        try {
-            while (!inf.finished()) {
-                if (written >= out.length) {
-                    byte[] bigger = new byte[out.length * 2];
-                    System.arraycopy(out, 0, bigger, 0, written);
-                    out = bigger;
-                }
-                written += inf.inflate(out, written, out.length - written);
-            }
-        } catch (DataFormatException e) {
-            throw new IllegalStateException("Failed to decompress ZRLE rectangle data", e);
-        } finally {
-            inf.end();
-        }
-        byte[] result = new byte[written];
-        System.arraycopy(out, 0, result, 0, written);
-        return result;
+        return 4;
     }
 }

@@ -3,6 +3,9 @@ package io.github.nhwalker.vnc4j.swing;
 import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.util.zip.DataFormatException;
+import java.util.zip.Inflater;
 
 /**
  * Utility methods for decoding VNC pixel data into ARGB integers for use with
@@ -111,6 +114,32 @@ final class PixelDecoder {
             }
             image.setRGB(x, y + dy, w, 1, argb, 0, w);
         }
+    }
+
+    /**
+     * Decompresses {@code compressed} using the supplied persistent {@link Inflater} and
+     * returns all decompressed bytes. The inflater is <em>not</em> reset or closed, so
+     * its stream context is preserved for subsequent calls (required by VNC encodings that
+     * maintain a continuous zlib stream across rectangles).
+     *
+     * <p>The caller must use {@link Inflater#setInput} before the first call if the
+     * inflater has no pending input yet; this method calls {@link Inflater#setInput}
+     * internally with {@code compressed}.
+     */
+    static byte[] inflate(Inflater inflater, byte[] compressed) {
+        inflater.setInput(compressed);
+        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(compressed.length * 4, 256));
+        byte[] buf = new byte[4096];
+        try {
+            int n;
+            while (!inflater.needsInput() && !inflater.finished()) {
+                n = inflater.inflate(buf);
+                out.write(buf, 0, n);
+            }
+        } catch (DataFormatException e) {
+            throw new IllegalStateException("Zlib decompression failed", e);
+        }
+        return out.toByteArray();
     }
 
     // -------------------------------------------------------------------------

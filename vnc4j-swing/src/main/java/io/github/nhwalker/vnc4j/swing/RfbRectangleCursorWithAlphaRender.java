@@ -5,37 +5,27 @@ import io.github.nhwalker.vnc4j.protocol.RfbRectangleCursorWithAlpha;
 import java.awt.image.BufferedImage;
 
 /**
- * Renders an {@link RfbRectangleCursorWithAlpha} (encoding type -314) onto a
- * {@link BufferedImage}.
+ * Renders {@link RfbRectangleCursorWithAlpha} rectangles (encoding type -314)
+ * onto a {@link BufferedImage}.
  *
  * <p>When the nested {@link RfbRectangleCursorWithAlpha#encoding()} is raw (0),
  * the {@link RfbRectangleCursorWithAlpha#data()} field contains
- * {@code width × height} 32-bit RGBA pixels (R, G, B, A — one byte each).
- * Other nested encodings are not currently supported.
- *
- * <p>The cursor hotspot is at ({@link RfbRectangleCursorWithAlpha#x()},
- * {@link RfbRectangleCursorWithAlpha#y()}) relative to the cursor image origin.
+ * {@code width × height} 32-bit RGBA pixels. Other nested encodings are not
+ * currently supported and result in a no-op.
  */
-public final class RfbRectangleCursorWithAlphaRender implements RfbRectangleRender {
+public final class RfbRectangleCursorWithAlphaRender
+        implements RfbRectangleRender<RfbRectangleCursorWithAlpha> {
 
     private static final int RAW_ENCODING = 0;
 
-    private final RfbRectangleCursorWithAlpha rectangle;
-
-    public RfbRectangleCursorWithAlphaRender(RfbRectangleCursorWithAlpha rectangle) {
-        this.rectangle = rectangle;
-    }
+    public RfbRectangleCursorWithAlphaRender() {}
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleCursorWithAlpha rectangle, BufferedImage image) {
         int w = rectangle.width();
         int h = rectangle.height();
         if (w <= 0 || h <= 0) return;
-
-        if (rectangle.encoding() != RAW_ENCODING) {
-            // Only raw RGBA is handled; other nested encodings are unsupported.
-            return;
-        }
+        if (rectangle.encoding() != RAW_ENCODING) return;
 
         byte[] data = rectangle.data();
         if (data == null || data.length < w * h * 4) return;

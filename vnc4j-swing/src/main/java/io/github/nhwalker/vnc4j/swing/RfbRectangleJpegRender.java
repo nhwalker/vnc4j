@@ -9,19 +9,15 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 /**
- * Renders an {@link RfbRectangleJpeg} (encoding type 21) onto a {@link BufferedImage}
- * by decoding the embedded JPEG data.
+ * Renders {@link RfbRectangleJpeg} rectangles (encoding type 21) onto a
+ * {@link BufferedImage} by decoding the embedded JPEG data.
  */
-public final class RfbRectangleJpegRender implements RfbRectangleRender {
+public final class RfbRectangleJpegRender implements RfbRectangleRender<RfbRectangleJpeg> {
 
-    private final RfbRectangleJpeg rectangle;
-
-    public RfbRectangleJpegRender(RfbRectangleJpeg rectangle) {
-        this.rectangle = rectangle;
-    }
+    public RfbRectangleJpegRender() {}
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleJpeg rectangle, BufferedImage image) {
         byte[] jpeg = rectangle.data();
         if (jpeg == null || jpeg.length == 0) return;
 

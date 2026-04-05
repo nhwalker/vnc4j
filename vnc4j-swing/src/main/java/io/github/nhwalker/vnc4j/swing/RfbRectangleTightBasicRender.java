@@ -4,65 +4,81 @@ import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightBasic;
 
 import java.awt.image.BufferedImage;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
- * Renders an {@link RfbRectangleTightBasic} (Tight encoding type 7, compression 0x0–0x7)
- * onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleTightBasic} rectangles (Tight encoding type 7,
+ * compression 0x0–0x7) onto a {@link BufferedImage}.
  *
- * <p>Three filter types are supported:
+ * <p>Tight encoding maintains <em>four independent persistent zlib streams</em>
+ * (indexed 0–3). This renderer holds all four as fields so their contexts survive
+ * between rectangles. Each rectangle may reset one or more streams via bits 0–3 of
+ * {@link RfbRectangleTightBasic#streamResets()}; a reset replaces the corresponding
+ * inflater with a fresh instance.
+ *
+ * <p>Three filter modes are supported:
  * <ul>
- *   <li>{@link RfbRectangleTightBasic#FILTER_COPY} – raw TPIXEL data after zlib decompression</li>
- *   <li>{@link RfbRectangleTightBasic#FILTER_PALETTE} – palette-indexed data after decompression</li>
- *   <li>{@link RfbRectangleTightBasic#FILTER_GRADIENT} – gradient-filtered TPIXEL data</li>
+ *   <li>{@link RfbRectangleTightBasic#FILTER_COPY} – raw TPIXEL rows</li>
+ *   <li>{@link RfbRectangleTightBasic#FILTER_PALETTE} – palette-indexed data</li>
+ *   <li>{@link RfbRectangleTightBasic#FILTER_GRADIENT} – gradient-predicted TPIXEL data</li>
  * </ul>
- *
- * <p><b>Note:</b> Tight encoding maintains persistent per-stream zlib contexts across
- * rectangles. This renderer decompresses the stored bytes as a self-contained stream,
- * which is correct for the first rectangle but may fail for subsequent rectangles that
- * continue a persistent stream.
  */
-public final class RfbRectangleTightBasicRender implements RfbRectangleRender {
+public final class RfbRectangleTightBasicRender
+        implements RfbRectangleRender<RfbRectangleTightBasic> {
 
-    private final RfbRectangleTightBasic rectangle;
     private final PixelFormat pixelFormat;
+    private final Inflater[] streams = new Inflater[]{
+            new Inflater(), new Inflater(), new Inflater(), new Inflater()
+    };
 
-    public RfbRectangleTightBasicRender(RfbRectangleTightBasic rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleTightBasicRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleTightBasic rectangle, BufferedImage image) {
+        resetStreams(rectangle.streamResets());
+
         int w = rectangle.width();
         int h = rectangle.height();
         int tpxSize = PixelDecoder.tpixelSize(pixelFormat);
+        Inflater stream = streams[rectangle.streamNumber()];
 
-        byte[] decompressed = decompress(rectangle.compressedData(), w * h * tpxSize);
+        byte[] decompressed = PixelDecoder.inflate(stream, rectangle.compressedData());
 
         switch (rectangle.filterType()) {
-            case RfbRectangleTightBasic.FILTER_COPY -> renderCopy(image, decompressed, w, h, tpxSize);
-            case RfbRectangleTightBasic.FILTER_PALETTE -> renderPalette(image, decompressed, w, h);
-            case RfbRectangleTightBasic.FILTER_GRADIENT -> renderGradient(image, decompressed, w, h, tpxSize);
-            default -> renderCopy(image, decompressed, w, h, tpxSize);
+            case RfbRectangleTightBasic.FILTER_COPY    -> renderCopy(image, decompressed, w, h, tpxSize, rectangle);
+            case RfbRectangleTightBasic.FILTER_PALETTE -> renderPalette(image, decompressed, w, h, rectangle);
+            case RfbRectangleTightBasic.FILTER_GRADIENT -> renderGradient(image, decompressed, w, h, tpxSize, rectangle);
+            default -> renderCopy(image, decompressed, w, h, tpxSize, rectangle);
         }
     }
 
-    private void renderCopy(BufferedImage image, byte[] data, int w, int h, int tpxSize) {
+    private void resetStreams(int resetBits) {
+        for (int i = 0; i < 4; i++) {
+            if ((resetBits & (1 << i)) != 0) {
+                streams[i].end();
+                streams[i] = new Inflater();
+            }
+        }
+    }
+
+    private void renderCopy(BufferedImage image, byte[] data, int w, int h,
+            int tpxSize, RfbRectangleTightBasic rect) {
         int[] argb = new int[w];
         for (int dy = 0; dy < h; dy++) {
             for (int dx = 0; dx < w; dx++) {
                 argb[dx] = PixelDecoder.decodeTPixel(data, (dy * w + dx) * tpxSize, pixelFormat);
             }
-            image.setRGB(rectangle.x(), rectangle.y() + dy, w, 1, argb, 0, w);
+            image.setRGB(rect.x(), rect.y() + dy, w, 1, argb, 0, w);
         }
     }
 
-    private void renderPalette(BufferedImage image, byte[] data, int w, int h) {
+    private void renderPalette(BufferedImage image, byte[] data, int w, int h,
+            RfbRectangleTightBasic rect) {
         int tpxSize = PixelDecoder.tpixelSize(pixelFormat);
-        int palSize = rectangle.paletteSize();
-        byte[] palBytes = rectangle.palette();
+        int palSize = rect.paletteSize();
+        byte[] palBytes = rect.palette();
 
         int[] palette = new int[palSize];
         for (int i = 0; i < palSize; i++) {
@@ -71,7 +87,7 @@ public final class RfbRectangleTightBasicRender implements RfbRectangleRender {
 
         int[] argb = new int[w];
         if (palSize == 2) {
-            // 1-bit packed per row
+            // 1-bit packed, MSB first, each row padded to a byte boundary
             int byteIdx = 0;
             for (int dy = 0; dy < h; dy++) {
                 int bits = 0;
@@ -81,12 +97,11 @@ public final class RfbRectangleTightBasicRender implements RfbRectangleRender {
                         bits = data[byteIdx++] & 0xFF;
                         bitsLeft = 8;
                     }
-                    int idx = (bits >> 7) & 1;
+                    argb[dx] = palette[(bits >> 7) & 1];
                     bits <<= 1;
                     bitsLeft--;
-                    argb[dx] = palette[idx];
                 }
-                image.setRGB(rectangle.x(), rectangle.y() + dy, w, 1, argb, 0, w);
+                image.setRGB(rect.x(), rect.y() + dy, w, 1, argb, 0, w);
             }
         } else {
             // 1-byte index per pixel
@@ -95,37 +110,24 @@ public final class RfbRectangleTightBasicRender implements RfbRectangleRender {
                     int idx = data[dy * w + dx] & 0xFF;
                     argb[dx] = (idx < palSize) ? palette[idx] : 0xFF000000;
                 }
-                image.setRGB(rectangle.x(), rectangle.y() + dy, w, 1, argb, 0, w);
+                image.setRGB(rect.x(), rect.y() + dy, w, 1, argb, 0, w);
             }
         }
     }
 
-    private void renderGradient(BufferedImage image, byte[] data, int w, int h, int tpxSize) {
-        // Gradient filter: each pixel is stored as a delta from the prediction.
-        // Prediction is the sum of the left pixel, the upper pixel, and
-        // the upper-left pixel, clamped to [0, 255] per channel (24-bit RGB assumed).
+    private void renderGradient(BufferedImage image, byte[] data, int w, int h,
+            int tpxSize, RfbRectangleTightBasic rect) {
         int[] prev = new int[w];
         int[] argb = new int[w];
-        int[] cur = new int[w * 3];
 
         for (int dy = 0; dy < h; dy++) {
-            // Decode row bytes (3 bytes per pixel for gradient filter)
-            for (int dx = 0; dx < w; dx++) {
-                int base = (dy * w + dx) * tpxSize;
-                cur[dx * 3]     = data[base]     & 0xFF;
-                cur[dx * 3 + 1] = data[base + 1] & 0xFF;
-                cur[dx * 3 + 2] = data[base + 2] & 0xFF;
-            }
-
             int leftR = 0, leftG = 0, leftB = 0;
             for (int dx = 0; dx < w; dx++) {
                 int upR = 0, upG = 0, upB = 0;
                 int upLeftR = 0, upLeftG = 0, upLeftB = 0;
                 if (dy > 0) {
                     int up = prev[dx];
-                    upR = (up >> 16) & 0xFF;
-                    upG = (up >> 8) & 0xFF;
-                    upB = up & 0xFF;
+                    upR = (up >> 16) & 0xFF; upG = (up >> 8) & 0xFF; upB = up & 0xFF;
                     if (dx > 0) {
                         int upLeft = prev[dx - 1];
                         upLeftR = (upLeft >> 16) & 0xFF;
@@ -133,40 +135,20 @@ public final class RfbRectangleTightBasicRender implements RfbRectangleRender {
                         upLeftB = upLeft & 0xFF;
                     }
                 }
-                int predR = clamp(leftR + upR - upLeftR);
-                int predG = clamp(leftG + upG - upLeftG);
-                int predB = clamp(leftB + upB - upLeftB);
-
-                int r = (predR + cur[dx * 3])     & 0xFF;
-                int g = (predG + cur[dx * 3 + 1]) & 0xFF;
-                int b = (predB + cur[dx * 3 + 2]) & 0xFF;
+                int base = (dy * w + dx) * tpxSize;
+                int r = (clamp(leftR + upR - upLeftR) + (data[base]     & 0xFF)) & 0xFF;
+                int g = (clamp(leftG + upG - upLeftG) + (data[base + 1] & 0xFF)) & 0xFF;
+                int b = (clamp(leftB + upB - upLeftB) + (data[base + 2] & 0xFF)) & 0xFF;
 
                 argb[dx] = 0xFF000000 | (r << 16) | (g << 8) | b;
                 leftR = r; leftG = g; leftB = b;
             }
             System.arraycopy(argb, 0, prev, 0, w);
-            image.setRGB(rectangle.x(), rectangle.y() + dy, w, 1, argb, 0, w);
+            image.setRGB(rect.x(), rect.y() + dy, w, 1, argb, 0, w);
         }
     }
 
     private static int clamp(int v) {
         return Math.max(0, Math.min(255, v));
-    }
-
-    private static byte[] decompress(byte[] compressed, int expectedSize) {
-        if (compressed == null || compressed.length == 0) {
-            return new byte[expectedSize];
-        }
-        byte[] out = new byte[expectedSize];
-        Inflater inflater = new Inflater();
-        try {
-            inflater.setInput(compressed);
-            inflater.inflate(out);
-        } catch (DataFormatException e) {
-            throw new IllegalStateException("Failed to decompress Tight basic rectangle data", e);
-        } finally {
-            inflater.end();
-        }
-        return out;
     }
 }

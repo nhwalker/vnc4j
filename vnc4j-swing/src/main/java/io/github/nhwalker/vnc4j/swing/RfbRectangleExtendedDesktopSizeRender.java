@@ -7,23 +7,18 @@ import java.awt.image.BufferedImage;
 /**
  * Renderer for {@link RfbRectangleExtendedDesktopSize} (encoding type -308).
  *
- * <p>This rectangle type carries layout metadata (screen list) but no pixel data.
- * The new framebuffer dimensions are carried in
+ * <p>Carries layout metadata but no pixel data. {@link #render} is a no-op —
+ * callers are responsible for handling any framebuffer resize indicated by
  * {@link RfbRectangleExtendedDesktopSize#width()} and
- * {@link RfbRectangleExtendedDesktopSize#height()}. The {@link #render(BufferedImage)}
- * method is a no-op — callers are responsible for creating a new
- * {@link BufferedImage} of the updated dimensions if required.
+ * {@link RfbRectangleExtendedDesktopSize#height()}.
  */
-public final class RfbRectangleExtendedDesktopSizeRender implements RfbRectangleRender {
+public final class RfbRectangleExtendedDesktopSizeRender
+        implements RfbRectangleRender<RfbRectangleExtendedDesktopSize> {
 
-    private final RfbRectangleExtendedDesktopSize rectangle;
-
-    public RfbRectangleExtendedDesktopSizeRender(RfbRectangleExtendedDesktopSize rectangle) {
-        this.rectangle = rectangle;
-    }
+    public RfbRectangleExtendedDesktopSizeRender() {}
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleExtendedDesktopSize rectangle, BufferedImage image) {
         // No pixel data to apply; framebuffer resize is handled by the caller.
     }
 }

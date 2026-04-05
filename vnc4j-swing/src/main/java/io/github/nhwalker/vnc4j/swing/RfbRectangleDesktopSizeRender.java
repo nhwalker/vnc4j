@@ -8,21 +8,15 @@ import java.awt.image.BufferedImage;
  * Renderer for {@link RfbRectangleDesktopSize} (encoding type -223).
  *
  * <p>This rectangle type carries no pixel data; it signals that the remote
- * framebuffer has been resized to ({@link RfbRectangleDesktopSize#width()},
- * {@link RfbRectangleDesktopSize#height()}). The {@link #render(BufferedImage)}
- * method is a no-op — callers are responsible for creating a new
- * {@link BufferedImage} of the updated dimensions.
+ * framebuffer has been resized. {@link #render} is a no-op — callers are
+ * responsible for creating a new {@link BufferedImage} of the updated dimensions.
  */
-public final class RfbRectangleDesktopSizeRender implements RfbRectangleRender {
+public final class RfbRectangleDesktopSizeRender implements RfbRectangleRender<RfbRectangleDesktopSize> {
 
-    private final RfbRectangleDesktopSize rectangle;
-
-    public RfbRectangleDesktopSizeRender(RfbRectangleDesktopSize rectangle) {
-        this.rectangle = rectangle;
-    }
+    public RfbRectangleDesktopSizeRender() {}
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleDesktopSize rectangle, BufferedImage image) {
         // No pixel data to apply; framebuffer resize is handled by the caller.
     }
 }

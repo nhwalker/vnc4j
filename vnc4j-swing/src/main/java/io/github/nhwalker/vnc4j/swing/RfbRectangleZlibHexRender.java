@@ -7,35 +7,35 @@ import io.github.nhwalker.vnc4j.protocol.ZlibHexTile;
 
 import java.awt.image.BufferedImage;
 import java.util.List;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
- * Renders an {@link RfbRectangleZlibHex} (encoding type 8) onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleZlibHex} rectangles (encoding type 8) onto a
+ * {@link BufferedImage}.
  *
  * <p>ZlibHex extends Hextile with two additional subencoding bits:
  * <ul>
- *   <li>{@link ZlibHexTile#SUBENC_ZLIB_RAW} – the entire tile raw data is zlib-compressed</li>
- *   <li>{@link ZlibHexTile#SUBENC_ZLIB} – the subrect portion is zlib-compressed</li>
+ *   <li>{@link ZlibHexTile#SUBENC_ZLIB_RAW} – tile raw pixel data is zlib-compressed</li>
+ *   <li>{@link ZlibHexTile#SUBENC_ZLIB} – tile subrect data is zlib-compressed</li>
  * </ul>
- * All other bits follow the standard Hextile semantics.
  *
- * <p><b>Note:</b> ZlibHex uses two persistent zlib streams shared across tiles and
- * rectangles. This renderer decompresses each chunk independently (fresh stream),
- * which is only correct for the very first use of each stream.
+ * <p>Two <em>persistent zlib streams</em> are maintained: one for raw tile data
+ * ({@link ZlibHexTile#SUBENC_ZLIB_RAW}) and one for subrect data
+ * ({@link ZlibHexTile#SUBENC_ZLIB}). Both streams survive across rectangles for
+ * the lifetime of the connection.
  */
-public final class RfbRectangleZlibHexRender implements RfbRectangleRender {
+public final class RfbRectangleZlibHexRender implements RfbRectangleRender<RfbRectangleZlibHex> {
 
-    private final RfbRectangleZlibHex rectangle;
     private final PixelFormat pixelFormat;
+    private final Inflater rawStream    = new Inflater();
+    private final Inflater subrectStream = new Inflater();
 
-    public RfbRectangleZlibHexRender(RfbRectangleZlibHex rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleZlibHexRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleZlibHex rectangle, BufferedImage image) {
         List<ZlibHexTile> tiles = rectangle.tiles();
         int tileIdx = 0;
 
@@ -58,17 +58,9 @@ public final class RfbRectangleZlibHexRender implements RfbRectangleRender {
                 int subenc = tile.subencoding();
 
                 if ((subenc & ZlibHexTile.SUBENC_ZLIB_RAW) != 0) {
-                    // Entire tile is zlib-compressed raw pixels
                     int bpp = PixelDecoder.bytesPerPixel(pixelFormat);
-                    byte[] raw = inflate(tile.zlibRawData(), tileW * tileH * bpp);
+                    byte[] raw = PixelDecoder.inflate(rawStream, tile.zlibRawData());
                     PixelDecoder.drawRawPixels(image, tileX, tileY, tileW, tileH, raw, 0, pixelFormat);
-                    continue;
-                }
-
-                if ((subenc & ZlibHexTile.SUBENC_RAW) != 0) {
-                    // Raw pixels (not zlib-compressed)
-                    // rawPixels is not a field of ZlibHexTile; this case is covered by ZLIB_RAW above.
-                    // If RAW without ZLIB_RAW, the data should have been stored elsewhere; skip.
                     continue;
                 }
 
@@ -83,42 +75,49 @@ public final class RfbRectangleZlibHexRender implements RfbRectangleRender {
 
                 if ((subenc & ZlibHexTile.SUBENC_ANY_SUBRECTS) != 0) {
                     boolean coloured = (subenc & ZlibHexTile.SUBENC_SUBRECTS_COLOURED) != 0;
-                    List<HextileSubrect> subrects;
 
                     if ((subenc & ZlibHexTile.SUBENC_ZLIB) != 0) {
-                        // Subrect data is zlib-compressed; we cannot parse it without the
-                        // protocol-level stream state, so skip subrect rendering.
-                        continue;
+                        // Subrect data is zlib-compressed; decompress and parse manually.
+                        byte[] subrectData = PixelDecoder.inflate(subrectStream, tile.zlibSubrectData());
+                        renderZlibSubrects(image, subrectData, tileX, tileY, fg, coloured);
                     } else {
-                        subrects = tile.subrects();
-                    }
-
-                    for (HextileSubrect sub : subrects) {
-                        int argb = coloured
-                                ? PixelDecoder.decodePixel(sub.pixel(), 0, pixelFormat)
-                                : fg;
-                        PixelDecoder.fillRect(image,
-                                tileX + sub.x(), tileY + sub.y(),
-                                sub.width(), sub.height(),
-                                argb);
+                        for (HextileSubrect sub : tile.subrects()) {
+                            int argb = coloured
+                                    ? PixelDecoder.decodePixel(sub.pixel(), 0, pixelFormat)
+                                    : fg;
+                            PixelDecoder.fillRect(image,
+                                    tileX + sub.x(), tileY + sub.y(),
+                                    sub.width(), sub.height(), argb);
+                        }
                     }
                 }
             }
         }
     }
 
-    private static byte[] inflate(byte[] compressed, int expectedSize) {
-        if (compressed == null || compressed.length == 0) return new byte[expectedSize];
-        byte[] out = new byte[expectedSize];
-        Inflater inf = new Inflater();
-        try {
-            inf.setInput(compressed);
-            inf.inflate(out);
-        } catch (DataFormatException e) {
-            throw new IllegalStateException("Failed to decompress ZlibHex tile data", e);
-        } finally {
-            inf.end();
+    /**
+     * Parses Hextile subrect records from a raw decompressed byte array and draws
+     * them. Each subrect is: [optional pixel bytes] + 1 packed-xy byte + 1 packed-wh byte.
+     */
+    private void renderZlibSubrects(BufferedImage image, byte[] data,
+            int tileX, int tileY, int fg, boolean coloured) {
+        int bpp = PixelDecoder.bytesPerPixel(pixelFormat);
+        int pos = 0;
+        while (pos < data.length) {
+            int argb = fg;
+            if (coloured) {
+                if (pos + bpp > data.length) break;
+                argb = PixelDecoder.decodePixel(data, pos, pixelFormat);
+                pos += bpp;
+            }
+            if (pos + 2 > data.length) break;
+            int xy = data[pos++] & 0xFF;
+            int wh = data[pos++] & 0xFF;
+            int sx = (xy >> 4) & 0xF;
+            int sy = xy & 0xF;
+            int sw = ((wh >> 4) & 0xF) + 1;
+            int sh = (wh & 0xF) + 1;
+            PixelDecoder.fillRect(image, tileX + sx, tileY + sy, sw, sh, argb);
         }
-        return out;
     }
 }

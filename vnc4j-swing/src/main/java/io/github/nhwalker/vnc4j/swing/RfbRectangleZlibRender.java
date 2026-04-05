@@ -4,42 +4,32 @@ import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleZlib;
 
 import java.awt.image.BufferedImage;
-import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
 /**
- * Renders an {@link RfbRectangleZlib} (encoding type 6) onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleZlib} rectangles (encoding type 6) onto a
+ * {@link BufferedImage}.
  *
- * <p>The zlib-compressed payload is decompressed and then treated as raw pixel data.
+ * <p>VNC Zlib encoding uses a <em>single persistent zlib stream</em> across all
+ * rectangles for the lifetime of the connection. This renderer maintains that
+ * stream as a field so that the decompressor's history is correctly preserved
+ * between calls to {@link #render}.
  */
-public final class RfbRectangleZlibRender implements RfbRectangleRender {
+public final class RfbRectangleZlibRender implements RfbRectangleRender<RfbRectangleZlib> {
 
-    private final RfbRectangleZlib rectangle;
     private final PixelFormat pixelFormat;
+    private final Inflater inflater = new Inflater();
 
-    public RfbRectangleZlibRender(RfbRectangleZlib rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleZlibRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleZlib rectangle, BufferedImage image) {
         byte[] compressed = rectangle.zlibData();
         if (compressed == null || compressed.length == 0) return;
 
-        int bpp = PixelDecoder.bytesPerPixel(pixelFormat);
-        int pixelCount = rectangle.width() * rectangle.height();
-        byte[] pixels = new byte[pixelCount * bpp];
-
-        Inflater inflater = new Inflater();
-        try {
-            inflater.setInput(compressed);
-            inflater.inflate(pixels);
-        } catch (DataFormatException e) {
-            throw new IllegalStateException("Failed to decompress Zlib rectangle data", e);
-        } finally {
-            inflater.end();
-        }
+        byte[] pixels = PixelDecoder.inflate(inflater, compressed);
 
         PixelDecoder.drawRawPixels(image,
                 rectangle.x(), rectangle.y(),

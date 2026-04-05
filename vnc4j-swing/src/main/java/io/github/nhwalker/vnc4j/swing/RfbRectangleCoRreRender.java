@@ -7,21 +7,20 @@ import io.github.nhwalker.vnc4j.protocol.RfbRectangleCoRre;
 import java.awt.image.BufferedImage;
 
 /**
- * Renders an {@link RfbRectangleCoRre} (encoding type 4) onto a {@link BufferedImage}.
- * Identical in structure to RRE but subrectangle coordinates are 8-bit.
+ * Renders {@link RfbRectangleCoRre} rectangles (encoding type 4) onto a
+ * {@link BufferedImage}. Identical in structure to RRE but subrectangle
+ * coordinates are 8-bit.
  */
-public final class RfbRectangleCoRreRender implements RfbRectangleRender {
+public final class RfbRectangleCoRreRender implements RfbRectangleRender<RfbRectangleCoRre> {
 
-    private final RfbRectangleCoRre rectangle;
     private final PixelFormat pixelFormat;
 
-    public RfbRectangleCoRreRender(RfbRectangleCoRre rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleCoRreRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleCoRre rectangle, BufferedImage image) {
         int bgArgb = PixelDecoder.decodePixel(rectangle.background(), 0, pixelFormat);
         PixelDecoder.fillRect(image,
                 rectangle.x(), rectangle.y(),

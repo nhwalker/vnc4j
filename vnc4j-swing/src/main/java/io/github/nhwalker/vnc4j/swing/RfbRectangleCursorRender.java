@@ -6,28 +6,24 @@ import io.github.nhwalker.vnc4j.protocol.RfbRectangleCursor;
 import java.awt.image.BufferedImage;
 
 /**
- * Renders an {@link RfbRectangleCursor} (encoding type -239) onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleCursor} rectangles (encoding type -239) onto a
+ * {@link BufferedImage}.
  *
- * <p>The cursor hotspot is at ({@code rectangle.x()}, {@code rectangle.y()}) relative
- * to the cursor image origin. This renderer draws the cursor shape at position (0, 0)
- * of the supplied image, masking pixels using the 1-bit bitmask.
- *
- * <p>Pixels whose bitmask bit is 0 are made transparent (written as fully transparent
- * black), while pixels whose bitmask bit is 1 are decoded from the pixel data and
- * written as fully opaque.
+ * <p>Pixels whose bitmask bit is 1 are decoded from the pixel data and written
+ * as fully opaque; pixels whose bitmask bit is 0 are written as fully transparent.
+ * The cursor hotspot is at ({@link RfbRectangleCursor#x()},
+ * {@link RfbRectangleCursor#y()}) relative to the cursor image origin.
  */
-public final class RfbRectangleCursorRender implements RfbRectangleRender {
+public final class RfbRectangleCursorRender implements RfbRectangleRender<RfbRectangleCursor> {
 
-    private final RfbRectangleCursor rectangle;
     private final PixelFormat pixelFormat;
 
-    public RfbRectangleCursorRender(RfbRectangleCursor rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleCursorRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleCursor rectangle, BufferedImage image) {
         int w = rectangle.width();
         int h = rectangle.height();
         if (w <= 0 || h <= 0) return;
@@ -42,12 +38,9 @@ public final class RfbRectangleCursorRender implements RfbRectangleRender {
                 int maskByte = bitmask[dy * maskRowBytes + dx / 8] & 0xFF;
                 boolean visible = (maskByte & (0x80 >> (dx % 8))) != 0;
 
-                int argb;
-                if (visible) {
-                    argb = PixelDecoder.decodePixel(pixels, (dy * w + dx) * bpp, pixelFormat);
-                } else {
-                    argb = 0x00000000;
-                }
+                int argb = visible
+                        ? PixelDecoder.decodePixel(pixels, (dy * w + dx) * bpp, pixelFormat)
+                        : 0x00000000;
                 image.setRGB(dx, dy, argb);
             }
         }

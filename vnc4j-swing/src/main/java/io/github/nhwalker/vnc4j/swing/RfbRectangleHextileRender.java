@@ -9,23 +9,22 @@ import java.awt.image.BufferedImage;
 import java.util.List;
 
 /**
- * Renders an {@link RfbRectangleHextile} (encoding type 5) onto a {@link BufferedImage}.
+ * Renders {@link RfbRectangleHextile} rectangles (encoding type 5) onto a
+ * {@link BufferedImage}.
  *
- * <p>The rectangle is divided into 16×16 tiles (smaller at the right/bottom edges).
- * Background and foreground colours persist across tiles within the rectangle.
+ * <p>Background and foreground colours persist across tiles within a single
+ * rectangle per the Hextile specification.
  */
-public final class RfbRectangleHextileRender implements RfbRectangleRender {
+public final class RfbRectangleHextileRender implements RfbRectangleRender<RfbRectangleHextile> {
 
-    private final RfbRectangleHextile rectangle;
     private final PixelFormat pixelFormat;
 
-    public RfbRectangleHextileRender(RfbRectangleHextile rectangle, PixelFormat pixelFormat) {
-        this.rectangle = rectangle;
+    public RfbRectangleHextileRender(PixelFormat pixelFormat) {
         this.pixelFormat = pixelFormat;
     }
 
     @Override
-    public void render(BufferedImage image) {
+    public void render(RfbRectangleHextile rectangle, BufferedImage image) {
         List<HextileTile> tiles = rectangle.tiles();
         int tileIdx = 0;
 
