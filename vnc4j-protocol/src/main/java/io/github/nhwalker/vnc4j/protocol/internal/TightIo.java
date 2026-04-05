@@ -10,11 +10,17 @@ final class TightIo {
     private TightIo() {}
 
     /**
-     * Returns the TPIXEL byte count for the given pixel format:
-     * 3 bytes when bitsPerPixel=32 and depth=24; otherwise bitsPerPixel/8.
+     * Returns the TPIXEL byte count for the given pixel format.
+     * Per the Tight encoding spec, TPIXEL is 3 bytes when true-colour-flag is set,
+     * bits-per-pixel is 32, depth is 24, and each RGB channel is exactly 8 bits wide
+     * (i.e. redMax == greenMax == blueMax == 255). Otherwise it is bitsPerPixel/8.
      */
     static int tpixelSize(PixelFormat pf) {
-        return (pf.bitsPerPixel() == 32 && pf.depth() == 24) ? 3 : pf.bitsPerPixel() / 8;
+        if (pf.trueColour() && pf.bitsPerPixel() == 32 && pf.depth() == 24
+                && pf.redMax() == 255 && pf.greenMax() == 255 && pf.blueMax() == 255) {
+            return 3;
+        }
+        return pf.bitsPerPixel() / 8;
     }
 
     /** Reads a Tight compact length (1-3 bytes) from the stream. */

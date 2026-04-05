@@ -23,8 +23,8 @@ public record ScreenImpl(long id, int x, int y, int width, int height, long flag
     public static Screen read(InputStream in) throws IOException {
         DataInputStream dis = new DataInputStream(in);
         long id = Integer.toUnsignedLong(dis.readInt());
-        int x = dis.readShort();
-        int y = dis.readShort();
+        int x = dis.readUnsignedShort();
+        int y = dis.readUnsignedShort();
         int width = dis.readUnsignedShort();
         int height = dis.readUnsignedShort();
         long flags = Integer.toUnsignedLong(dis.readInt());

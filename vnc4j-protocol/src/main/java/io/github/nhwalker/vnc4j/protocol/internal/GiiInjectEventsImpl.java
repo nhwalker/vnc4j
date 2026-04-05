@@ -41,7 +41,10 @@ public record GiiInjectEventsImpl(boolean bigEndian, List<GiiEvent> events) impl
         ByteArrayInputStream bais = new ByteArrayInputStream(evBytes);
         List<GiiEvent> events = new ArrayList<>();
         while (bais.available() > 0) {
-            events.add(GiiEvent.readEvent(bais, bigEndian));
+            GiiEvent event = GiiEvent.readEvent(bais, bigEndian);
+            if (event != null) {
+                events.add(event);
+            }
         }
         return new GiiInjectEventsImpl(bigEndian, events);
     }

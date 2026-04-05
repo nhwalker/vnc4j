@@ -13,8 +13,7 @@ public final class GiiEventDispatch {
         DataInputStream dis = new DataInputStream(in);
         int eventSize = dis.readUnsignedByte();
         int eventType = dis.readUnsignedByte();
-        // Remaining bytes after size and type have already been consumed above
-        // Each readWithType method reads the remaining bytes for its event type
+        // eventSize and eventType are the first 2 bytes; remaining = eventSize - 2
         switch (eventType) {
             case 5: case 6: case 7:
                 return GiiKeyEventImpl.readWithType(in, bigEndian, eventType);
@@ -25,9 +24,13 @@ public final class GiiEventDispatch {
             case 12: case 13:
                 return GiiValuatorEventImpl.readWithType(in, bigEndian, eventType);
             default:
-                // Unknown event type: skip remaining bytes (eventSize - 2 already read)
-                dis.skipBytes(eventSize - 2);
-                throw new IOException("Unknown GII event type: " + eventType);
+                // Unknown event type: skip the remaining bytes to maintain stream sync
+                int remaining = eventSize - 2;
+                if (remaining > 0) {
+                    byte[] skip = new byte[remaining];
+                    dis.readFully(skip);
+                }
+                return null;
         }
     }
 }
