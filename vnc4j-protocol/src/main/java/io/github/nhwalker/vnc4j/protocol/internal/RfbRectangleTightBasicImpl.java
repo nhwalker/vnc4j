@@ -72,7 +72,7 @@ public final class RfbRectangleTightBasicImpl implements RfbRectangleTightBasic 
             dos.writeByte(filterType);
         }
         if (filterType == FILTER_PALETTE) {
-            dos.writeByte(paletteSize);
+            dos.writeByte(paletteSize - 1); // wire format is n-1
             if (palette != null) dos.write(palette);
         }
         byte[] data = compressedData != null ? compressedData : new byte[0];
@@ -95,9 +95,9 @@ public final class RfbRectangleTightBasicImpl implements RfbRectangleTightBasic 
             filterType = dis.readUnsignedByte();
         }
         if (filterType == FILTER_PALETTE) {
-            paletteSize = dis.readUnsignedByte(); // wire value is n-1 (number of colours minus 1)
+            paletteSize = dis.readUnsignedByte() + 1; // wire sends n-1; store actual count n
             int tpixelSize = TightIo.tpixelSize(pf);
-            palette = new byte[(paletteSize + 1) * tpixelSize]; // actual count is paletteSize+1
+            palette = new byte[paletteSize * tpixelSize];
             dis.readFully(palette);
         }
         int len = TightIo.readCompactLength(dis);

@@ -14,15 +14,17 @@ import java.util.Objects;
 
 public final class ZlibHexTileImpl implements ZlibHexTile {
     private final int subencoding;
+    private final byte[] rawPixels;
     private final byte[] zlibRawData;
     private final byte[] background;
     private final byte[] foreground;
     private final byte[] zlibSubrectData;
     private final List<HextileSubrect> subrects;
 
-    public ZlibHexTileImpl(int subencoding, byte[] zlibRawData, byte[] background,
+    public ZlibHexTileImpl(int subencoding, byte[] rawPixels, byte[] zlibRawData, byte[] background,
             byte[] foreground, byte[] zlibSubrectData, List<HextileSubrect> subrects) {
         this.subencoding = subencoding;
+        this.rawPixels = rawPixels;
         this.zlibRawData = zlibRawData;
         this.background = background;
         this.foreground = foreground;
@@ -31,6 +33,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
     }
 
     @Override public int subencoding() { return subencoding; }
+    @Override public byte[] rawPixels() { return rawPixels; }
     @Override public byte[] zlibRawData() { return zlibRawData; }
     @Override public byte[] background() { return background; }
     @Override public byte[] foreground() { return foreground; }
@@ -42,6 +45,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
         if (this == o) return true;
         if (!(o instanceof ZlibHexTile other)) return false;
         return subencoding == other.subencoding()
+                && Arrays.equals(rawPixels, other.rawPixels())
                 && Arrays.equals(zlibRawData, other.zlibRawData())
                 && Arrays.equals(background, other.background())
                 && Arrays.equals(foreground, other.foreground())
@@ -51,7 +55,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
 
     @Override
     public int hashCode() {
-        return Objects.hash(subencoding, Arrays.hashCode(zlibRawData),
+        return Objects.hash(subencoding, Arrays.hashCode(rawPixels), Arrays.hashCode(zlibRawData),
                 Arrays.hashCode(background), Arrays.hashCode(foreground),
                 Arrays.hashCode(zlibSubrectData), subrects);
     }
@@ -59,6 +63,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
     @Override
     public String toString() {
         return "ZlibHexTile[subencoding=" + subencoding
+                + ", rawPixels.len=" + (rawPixels != null ? rawPixels.length : "null")
                 + ", zlibRawData.len=" + (zlibRawData != null ? zlibRawData.length : "null")
                 + ", background=" + Arrays.toString(background)
                 + ", foreground=" + Arrays.toString(foreground)
@@ -70,7 +75,10 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
     public void write(OutputStream out) throws IOException {
         DataOutputStream dos = new DataOutputStream(out);
         dos.writeByte(subencoding);
-        if ((subencoding & SUBENC_ZLIB_RAW) != 0) {
+        if ((subencoding & SUBENC_RAW) != 0 && (subencoding & SUBENC_ZLIB_RAW) == 0) {
+            // Plain uncompressed raw tile — write pixel data directly.
+            if (rawPixels != null) dos.write(rawPixels);
+        } else if ((subencoding & SUBENC_ZLIB_RAW) != 0) {
             byte[] data = zlibRawData != null ? zlibRawData : new byte[0];
             dos.writeShort(data.length);
             dos.write(data);
@@ -102,13 +110,18 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
             throws IOException {
         DataInputStream dis = new DataInputStream(in);
         int subencoding = dis.readUnsignedByte();
+        byte[] rawPixels = null;
         byte[] zlibRawData = null;
         byte[] background = null;
         byte[] foreground = null;
         byte[] zlibSubrectData = null;
         List<HextileSubrect> subrects = List.of();
 
-        if ((subencoding & SUBENC_ZLIB_RAW) != 0) {
+        if ((subencoding & SUBENC_RAW) != 0 && (subencoding & SUBENC_ZLIB_RAW) == 0) {
+            // Plain uncompressed raw tile (hextile Raw without zlib).
+            rawPixels = new byte[tileWidth * tileHeight * bytesPerPixel];
+            dis.readFully(rawPixels);
+        } else if ((subencoding & SUBENC_ZLIB_RAW) != 0) {
             int len = dis.readUnsignedShort();
             zlibRawData = new byte[len];
             dis.readFully(zlibRawData);
@@ -137,11 +150,12 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
                 }
             }
         }
-        return new ZlibHexTileImpl(subencoding, zlibRawData, background, foreground, zlibSubrectData, subrects);
+        return new ZlibHexTileImpl(subencoding, rawPixels, zlibRawData, background, foreground, zlibSubrectData, subrects);
     }
 
     public static final class BuilderImpl implements ZlibHexTile.Builder {
         private int subencoding;
+        private byte[] rawPixels;
         private byte[] zlibRawData;
         private byte[] background;
         private byte[] foreground;
@@ -149,6 +163,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
         private List<HextileSubrect> subrects;
 
         @Override public Builder subencoding(int v) { this.subencoding = v; return this; }
+        @Override public Builder rawPixels(byte[] v) { this.rawPixels = v; return this; }
         @Override public Builder zlibRawData(byte[] v) { this.zlibRawData = v; return this; }
         @Override public Builder background(byte[] v) { this.background = v; return this; }
         @Override public Builder foreground(byte[] v) { this.foreground = v; return this; }
@@ -157,7 +172,7 @@ public final class ZlibHexTileImpl implements ZlibHexTile {
 
         @Override
         public ZlibHexTile build() {
-            return new ZlibHexTileImpl(subencoding, zlibRawData, background, foreground, zlibSubrectData, subrects);
+            return new ZlibHexTileImpl(subencoding, rawPixels, zlibRawData, background, foreground, zlibSubrectData, subrects);
         }
     }
 }

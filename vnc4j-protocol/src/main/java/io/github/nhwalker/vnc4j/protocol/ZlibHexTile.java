@@ -7,6 +7,8 @@ import java.util.List;
  * A single tile within a ZlibHex encoded rectangle. Extends the Hextile subencoding
  * with two additional bits:
  * <ul>
+ *   <li>{@link #SUBENC_RAW} (1) – plain (uncompressed) raw tile pixel data, same as
+ *       hextile Raw; stored in {@link #rawPixels()}; all other fields absent.</li>
  *   <li>{@link #SUBENC_ZLIB_RAW} (32) – the entire raw tile pixel data is zlib-compressed;
  *       stored in {@link #zlibRawData()}; all other Hextile fields are absent.</li>
  *   <li>{@link #SUBENC_ZLIB} (64) – the subrect portion is zlib-compressed;
@@ -27,11 +29,16 @@ public interface ZlibHexTile {
     }
 
     int subencoding();
+    /**
+     * Non-null when {@link #SUBENC_RAW} is set and {@link #SUBENC_ZLIB_RAW} is not;
+     * contains raw (uncompressed) pixel data for the tile.
+     */
+    byte[] rawPixels();
     /** Non-null when {@link #SUBENC_ZLIB_RAW} is set; replaces all other tile content. */
     byte[] zlibRawData();
-    /** Non-null when {@link #SUBENC_BACKGROUND_SPECIFIED} is set and {@link #SUBENC_ZLIB_RAW} is not. */
+    /** Non-null when {@link #SUBENC_BACKGROUND_SPECIFIED} is set and neither raw bit is set. */
     byte[] background();
-    /** Non-null when {@link #SUBENC_FOREGROUND_SPECIFIED} is set and {@link #SUBENC_ZLIB_RAW} is not. */
+    /** Non-null when {@link #SUBENC_FOREGROUND_SPECIFIED} is set and neither raw bit is set. */
     byte[] foreground();
     /** Non-null when {@link #SUBENC_ZLIB} is set; replaces subrect list. */
     byte[] zlibSubrectData();
@@ -40,6 +47,7 @@ public interface ZlibHexTile {
 
     interface Builder {
         Builder subencoding(int subencoding);
+        Builder rawPixels(byte[] rawPixels);
         Builder zlibRawData(byte[] zlibRawData);
         Builder background(byte[] background);
         Builder foreground(byte[] foreground);
@@ -49,7 +57,8 @@ public interface ZlibHexTile {
         ZlibHexTile build();
 
         default Builder from(ZlibHexTile obj) {
-            return subencoding(obj.subencoding()).zlibRawData(obj.zlibRawData())
+            return subencoding(obj.subencoding()).rawPixels(obj.rawPixels())
+                    .zlibRawData(obj.zlibRawData())
                     .background(obj.background()).foreground(obj.foreground())
                     .zlibSubrectData(obj.zlibSubrectData()).subrects(obj.subrects());
         }

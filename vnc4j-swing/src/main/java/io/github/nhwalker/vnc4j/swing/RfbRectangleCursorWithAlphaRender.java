@@ -33,10 +33,20 @@ public final class RfbRectangleCursorWithAlphaRender
         for (int dy = 0; dy < h; dy++) {
             for (int dx = 0; dx < w; dx++) {
                 int base = (dy * w + dx) * 4;
-                int r = data[base]     & 0xFF;
-                int g = data[base + 1] & 0xFF;
-                int b = data[base + 2] & 0xFF;
-                int a = data[base + 3] & 0xFF;
+                int rPre = data[base]     & 0xFF;
+                int gPre = data[base + 1] & 0xFF;
+                int bPre = data[base + 2] & 0xFF;
+                int a    = data[base + 3] & 0xFF;
+                // The spec stores pre-multiplied RGBA; BufferedImage.setRGB expects
+                // straight (non-pre-multiplied) ARGB, so un-premultiply here.
+                int r, g, b;
+                if (a == 0) {
+                    r = g = b = 0;
+                } else {
+                    r = Math.min(255, (rPre * 255 + a / 2) / a);
+                    g = Math.min(255, (gPre * 255 + a / 2) / a);
+                    b = Math.min(255, (bPre * 255 + a / 2) / a);
+                }
                 image.setRGB(dx, dy, (a << 24) | (r << 16) | (g << 8) | b);
             }
         }

@@ -107,6 +107,8 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender<RfbRecta
 
         int[] argb = new int[tileW];
         for (int dy = 0; dy < tileH; dy++) {
+            // Per the spec, each row is padded to a whole number of bytes, so the
+            // bit accumulator must be reset at the start of every row.
             int accum = 0;
             int bitsLeft = 0;
             for (int dx = 0; dx < tileW; dx++) {

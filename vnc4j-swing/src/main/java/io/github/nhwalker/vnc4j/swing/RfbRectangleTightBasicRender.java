@@ -117,6 +117,19 @@ public final class RfbRectangleTightBasicRender
 
     private void renderGradient(BufferedImage image, byte[] data, int w, int h,
             int tpxSize, RfbRectangleTightBasic rect) {
+        // The gradient algorithm operates on three separate 8-bit colour channels
+        // (R, G, B) packed as the first, second and third byte of each TPIXEL.
+        // Per the spec a TPIXEL is 3 bytes only for 32-bit true-colour; for any
+        // other format tpxSize != 3, meaning the data is NOT laid out as three
+        // independent 8-bit channels.  Gradient decoding is undefined for those
+        // formats (the spec only permits GradientFilter when bits-per-pixel is 16
+        // or 32, but 16-bit TPIXEL is a packed 2-byte value, not three channels).
+        // Fall back to the raw CopyFilter path so we still render something.
+        if (tpxSize != 3) {
+            renderCopy(image, data, w, h, tpxSize, rect);
+            return;
+        }
+
         int[] prev = new int[w];
         int[] argb = new int[w];
 
@@ -135,7 +148,7 @@ public final class RfbRectangleTightBasicRender
                         upLeftB = upLeft & 0xFF;
                     }
                 }
-                int base = (dy * w + dx) * tpxSize;
+                int base = (dy * w + dx) * 3;
                 int r = (clamp(leftR + upR - upLeftR) + (data[base]     & 0xFF)) & 0xFF;
                 int g = (clamp(leftG + upG - upLeftG) + (data[base + 1] & 0xFF)) & 0xFF;
                 int b = (clamp(leftB + upB - upLeftB) + (data[base + 2] & 0xFF)) & 0xFF;
