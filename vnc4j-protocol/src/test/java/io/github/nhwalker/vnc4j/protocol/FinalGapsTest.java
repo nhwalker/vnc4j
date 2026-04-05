@@ -1,0 +1,541 @@
+package io.github.nhwalker.vnc4j.protocol;
+
+import org.junit.jupiter.api.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+/**
+ * Covers the remaining ~54 missed instructions after previous test suites.
+ * Key patterns targeted:
+ * - equals() false-branch on last field comparison (false-return of final &&)
+ * - toString() with null array fields (Cursor, CursorWithAlpha, Jpeg)
+ * - Constructor null-list normalization (subrects/tiles/screens null → List.of())
+ * - write() null-guard branches (null name, null list fields)
+ * - GiiValuatorImpl.writeFixedUtf8 null string
+ * - ZlibHexTile SUBENC_ZLIB_RAW with null zlibRawData
+ * - RfbRectangleTightBasic with null compressedData
+ * - HextileTile SUBENC_ANY_SUBRECTS with null subrects
+ * - RfbRectangleDispatch: encoding type 21 (JPEG) → UnsupportedOperationException
+ * - KeyEvent.read with down=false; EnableContinuousUpdates.read with enable=false
+ * - GiiServerVersion.read with bigEndian=false
+ * - GiiDeviceCreation round-trip with bigEndian=false
+ */
+class FinalGapsTest {
+
+    private static final PixelFormat PF_32BPP = PixelFormat.newBuilder()
+            .bitsPerPixel(32).depth(24).bigEndian(false).trueColour(true)
+            .redMax(255).greenMax(255).blueMax(255)
+            .redShift(16).greenShift(8).blueShift(0).build();
+
+    // -----------------------------------------------------------------------
+    // equals() false-on-last-field: covers the "false return" branch of the
+    // final && in the return statement of each Impl.equals() method.
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testRfbRectangleLastRect_equals_diffHeight() {
+        RfbRectangleLastRect a = RfbRectangleLastRect.newBuilder().x(0).y(0).width(1).height(1).build();
+        RfbRectangleLastRect b = RfbRectangleLastRect.newBuilder().x(0).y(0).width(1).height(2).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleJpeg_equals_diffData() {
+        RfbRectangleJpeg a = RfbRectangleJpeg.newBuilder().x(0).y(0).width(4).height(4)
+                .data(new byte[]{1, 2}).build();
+        RfbRectangleJpeg b = RfbRectangleJpeg.newBuilder().x(0).y(0).width(4).height(4)
+                .data(new byte[]{3, 4}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleCursor_equals_diffPixels() {
+        RfbRectangleCursor a = RfbRectangleCursor.newBuilder()
+                .x(0).y(0).width(1).height(1)
+                .pixels(new byte[]{0, 0, 0, 1}).bitmask(new byte[]{(byte) 0x80}).build();
+        RfbRectangleCursor b = RfbRectangleCursor.newBuilder()
+                .x(0).y(0).width(1).height(1)
+                .pixels(new byte[]{0, 0, 0, 2}).bitmask(new byte[]{(byte) 0x80}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleCursorWithAlpha_equals_diffData() {
+        RfbRectangleCursorWithAlpha a = RfbRectangleCursorWithAlpha.newBuilder()
+                .x(0).y(0).width(0).height(0).data(new byte[]{1}).build();
+        RfbRectangleCursorWithAlpha b = RfbRectangleCursorWithAlpha.newBuilder()
+                .x(0).y(0).width(0).height(0).data(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleCopyRect_equals_diffSrcY() {
+        RfbRectangleCopyRect a = RfbRectangleCopyRect.newBuilder()
+                .x(0).y(0).width(1).height(1).srcX(0).srcY(10).build();
+        RfbRectangleCopyRect b = RfbRectangleCopyRect.newBuilder()
+                .x(0).y(0).width(1).height(1).srcX(0).srcY(20).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleDesktopSize_equals_diffHeight() {
+        RfbRectangleDesktopSize a = RfbRectangleDesktopSize.newBuilder()
+                .x(0).y(0).width(100).height(100).build();
+        RfbRectangleDesktopSize b = RfbRectangleDesktopSize.newBuilder()
+                .x(0).y(0).width(100).height(200).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleH264_equals_diffData() {
+        RfbRectangleH264 a = RfbRectangleH264.newBuilder()
+                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{1}).build();
+        RfbRectangleH264 b = RfbRectangleH264.newBuilder()
+                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleTightFill_equals_diffColor() {
+        RfbRectangleTightFill a = RfbRectangleTightFill.newBuilder()
+                .x(0).y(0).width(1).height(1).streamResets(0).fillColor(new byte[]{0}).build();
+        RfbRectangleTightFill b = RfbRectangleTightFill.newBuilder()
+                .x(0).y(0).width(1).height(1).streamResets(0).fillColor(new byte[]{1}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleTightJpeg_equals_diffData() {
+        RfbRectangleTightJpeg a = RfbRectangleTightJpeg.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).jpegData(new byte[]{1}).build();
+        RfbRectangleTightJpeg b = RfbRectangleTightJpeg.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).jpegData(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleTightPngFill_equals_diffColor() {
+        RfbRectangleTightPngFill a = RfbRectangleTightPngFill.newBuilder()
+                .x(0).y(0).width(1).height(1).streamResets(0).fillColor(new byte[]{0}).build();
+        RfbRectangleTightPngFill b = RfbRectangleTightPngFill.newBuilder()
+                .x(0).y(0).width(1).height(1).streamResets(0).fillColor(new byte[]{1}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleTightPngJpeg_equals_diffData() {
+        RfbRectangleTightPngJpeg a = RfbRectangleTightPngJpeg.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).jpegData(new byte[]{1}).build();
+        RfbRectangleTightPngJpeg b = RfbRectangleTightPngJpeg.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).jpegData(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleTightPngPng_equals_diffData() {
+        RfbRectangleTightPngPng a = RfbRectangleTightPngPng.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).pngData(new byte[]{(byte) 0x89}).build();
+        RfbRectangleTightPngPng b = RfbRectangleTightPngPng.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0).pngData(new byte[]{0x01}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleRaw_equals_diffPixels() {
+        RfbRectangleRaw a = RfbRectangleRaw.newBuilder()
+                .x(0).y(0).width(1).height(1).pixels(new byte[]{0}).build();
+        RfbRectangleRaw b = RfbRectangleRaw.newBuilder()
+                .x(0).y(0).width(1).height(1).pixels(new byte[]{1}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleZlib_equals_diffData() {
+        RfbRectangleZlib a = RfbRectangleZlib.newBuilder()
+                .x(0).y(0).width(1).height(1).zlibData(new byte[]{1}).build();
+        RfbRectangleZlib b = RfbRectangleZlib.newBuilder()
+                .x(0).y(0).width(1).height(1).zlibData(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleZrle_equals_diffData() {
+        RfbRectangleZrle a = RfbRectangleZrle.newBuilder()
+                .x(0).y(0).width(1).height(1).zlibData(new byte[]{1}).build();
+        RfbRectangleZrle b = RfbRectangleZrle.newBuilder()
+                .x(0).y(0).width(1).height(1).zlibData(new byte[]{2}).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleRre_equals_diffSubrects() {
+        RreSubrect sr1 = RreSubrect.newBuilder().pixel(new byte[]{0}).x(0).y(0).width(1).height(1).build();
+        RreSubrect sr2 = RreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(1).height(1).build();
+        RfbRectangleRre a = RfbRectangleRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr1)).build();
+        RfbRectangleRre b = RfbRectangleRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr2)).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleCoRre_equals_diffSubrects() {
+        CoRreSubrect sr1 = CoRreSubrect.newBuilder().pixel(new byte[]{0}).x(0).y(0).width(1).height(1).build();
+        CoRreSubrect sr2 = CoRreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(1).height(1).build();
+        RfbRectangleCoRre a = RfbRectangleCoRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr1)).build();
+        RfbRectangleCoRre b = RfbRectangleCoRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr2)).build();
+        assertNotEquals(a, b);
+    }
+
+    @Test
+    void testRfbRectangleExtendedDesktopSize_equals_diffScreens() {
+        Screen s1 = Screen.newBuilder().id(1).x(0).y(0).width(800).height(600).flags(0).build();
+        Screen s2 = Screen.newBuilder().id(2).x(0).y(0).width(800).height(600).flags(0).build();
+        RfbRectangleExtendedDesktopSize a = RfbRectangleExtendedDesktopSize.newBuilder()
+                .x(0).y(0).width(800).height(600).screens(List.of(s1)).build();
+        RfbRectangleExtendedDesktopSize b = RfbRectangleExtendedDesktopSize.newBuilder()
+                .x(0).y(0).width(800).height(600).screens(List.of(s2)).build();
+        assertNotEquals(a, b);
+    }
+
+    // -----------------------------------------------------------------------
+    // toString() with null array fields
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testRfbRectangleCursor_toString_nullPixelsAndBitmask() {
+        RfbRectangleCursor msg = RfbRectangleCursor.newBuilder()
+                .x(0).y(0).width(1).height(1).pixels(null).bitmask(null).build();
+        String s = msg.toString();
+        assertTrue(s.contains("null"), "toString should contain 'null' for null pixels/bitmask");
+    }
+
+    @Test
+    void testRfbRectangleCursorWithAlpha_toString_nullData() {
+        RfbRectangleCursorWithAlpha msg = RfbRectangleCursorWithAlpha.newBuilder()
+                .x(0).y(0).width(0).height(0).data(null).build();
+        String s = msg.toString();
+        assertTrue(s.contains("null"), "toString should contain 'null' for null data");
+    }
+
+    @Test
+    void testRfbRectangleJpeg_toString_nullData() {
+        RfbRectangleJpeg msg = RfbRectangleJpeg.newBuilder()
+                .x(0).y(0).width(4).height(4).data(null).build();
+        String s = msg.toString();
+        assertTrue(s.contains("null"), "toString should contain 'null' for null data");
+    }
+
+    // -----------------------------------------------------------------------
+    // Constructor null-list normalization: covers the List.of() branch in
+    // constructors that have `field = field != null ? field : List.of()`
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testRfbRectangleRre_nullSubrects_constructor() {
+        RfbRectangleRre msg = RfbRectangleRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(null).build();
+        assertNotNull(msg.subrects());
+    }
+
+    @Test
+    void testRfbRectangleCoRre_nullSubrects_constructor() {
+        RfbRectangleCoRre msg = RfbRectangleCoRre.newBuilder()
+                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(null).build();
+        assertNotNull(msg.subrects());
+    }
+
+    @Test
+    void testRfbRectangleZlibHex_nullTiles_constructor() {
+        RfbRectangleZlibHex msg = RfbRectangleZlibHex.newBuilder()
+                .x(0).y(0).width(16).height(16).tiles(null).build();
+        assertNotNull(msg.tiles());
+    }
+
+    @Test
+    void testRfbRectangleHextile_nullTiles_constructor() {
+        RfbRectangleHextile msg = RfbRectangleHextile.newBuilder()
+                .x(0).y(0).width(16).height(16).tiles(null).build();
+        assertNotNull(msg.tiles());
+    }
+
+    @Test
+    void testRfbRectangleExtendedDesktopSize_nullScreens_constructor() {
+        RfbRectangleExtendedDesktopSize msg = RfbRectangleExtendedDesktopSize.newBuilder()
+                .x(0).y(0).width(100).height(100).screens(null).build();
+        assertNotNull(msg.screens());
+    }
+
+    // -----------------------------------------------------------------------
+    // write() null guards that are reachable
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testServerInit_nullName_write() throws IOException {
+        ServerInit msg = ServerInit.newBuilder()
+                .framebufferWidth(800).framebufferHeight(600)
+                .pixelFormat(PF_32BPP).name(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testSecurityTypes_nullList_write() throws IOException {
+        SecurityTypes msg = SecurityTypes.newBuilder().securityTypes(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        // count byte = 0 (empty list)
+        assertEquals(0, baos.toByteArray()[0]);
+    }
+
+    @Test
+    void testSetEncodings_nullList_write() throws IOException {
+        SetEncodings msg = SetEncodings.newBuilder().encodings(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testSetColourMapEntries_nullList_write() throws IOException {
+        SetColourMapEntries msg = SetColourMapEntries.newBuilder()
+                .firstColour(0).colours(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testSetDesktopSize_nullScreens_write() throws IOException {
+        SetDesktopSize msg = SetDesktopSize.newBuilder()
+                .width(800).height(600).screens(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testFramebufferUpdate_nullRects_write() throws IOException {
+        FramebufferUpdate msg = FramebufferUpdate.newBuilder().rectangles(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testGiiInjectEvents_nullEvents_write() throws IOException {
+        GiiInjectEvents msg = GiiInjectEvents.newBuilder().events(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testGiiValuatorEvent_nullValues_write() throws IOException {
+        GiiValuatorEvent msg = GiiValuatorEvent.newBuilder()
+                .deviceOrigin(0L).first(0L).values(null).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos, true));
+        assertTrue(baos.size() > 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // GiiValuatorImpl.writeFixedUtf8 with null string (longName / shortName)
+    // -----------------------------------------------------------------------
+
+    /**
+     * GiiValuatorImpl.writeFixedUtf8() has:
+     * {@code byte[] bytes = s != null ? s.getBytes(...) : new byte[0]}.
+     * Passing null for longName and shortName covers the null branch.
+     */
+    @Test
+    void testGiiValuator_nullNames_write() throws IOException {
+        GiiValuator v = GiiValuator.newBuilder()
+                .index(0)
+                .longName(null)
+                .shortName(null)
+                .rangeMin(-100).rangeCenter(0).rangeMax(100)
+                .siUnit(0).siAdd(0).siMul(1).siDiv(1).siShift(0).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> v.write(baos, true));
+        assertTrue(baos.size() > 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // ZlibHexTile SUBENC_ZLIB_RAW with null zlibRawData
+    // -----------------------------------------------------------------------
+
+    /**
+     * ZlibHexTileImpl.write() has:
+     * {@code byte[] data = zlibRawData != null ? zlibRawData : new byte[0]}.
+     * The null branch is covered when SUBENC_ZLIB_RAW is set but zlibRawData is null.
+     */
+    @Test
+    void testZlibHexTile_zlibRaw_nullData_write() throws IOException {
+        ZlibHexTile msg = ZlibHexTile.newBuilder()
+                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
+                .zlibRawData(null)
+                .build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        // subenc byte + 2-byte length (0) = 3 bytes
+        assertEquals(3, baos.size());
+    }
+
+    // -----------------------------------------------------------------------
+    // RfbRectangleTightBasic with null compressedData and null palette
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testRfbRectangleTightBasic_nullCompressedData_write() throws IOException {
+        RfbRectangleTightBasic msg = RfbRectangleTightBasic.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0)
+                .filterType(RfbRectangleTightBasic.FILTER_COPY)
+                .paletteSize(0).palette(new byte[0])
+                .compressedData(null)
+                .build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    @Test
+    void testRfbRectangleTightBasic_paletteFilter_nullPalette_write() throws IOException {
+        // filterType=FILTER_PALETTE with null palette exercises the
+        // `if (palette != null) dos.write(palette)` null branch.
+        RfbRectangleTightBasic msg = RfbRectangleTightBasic.newBuilder()
+                .x(0).y(0).width(4).height(4).streamResets(0)
+                .filterType(RfbRectangleTightBasic.FILTER_PALETTE)
+                .paletteSize(2).palette(null)
+                .compressedData(new byte[]{0})
+                .build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        assertTrue(baos.size() > 0);
+    }
+
+    // -----------------------------------------------------------------------
+    // HextileTile SUBENC_ANY_SUBRECTS with null subrects
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testHextileTile_anySubrects_nullSubrects_write() throws IOException {
+        HextileTile msg = HextileTile.newBuilder()
+                .subencoding(HextileTile.SUBENC_ANY_SUBRECTS)
+                .subrects(null)
+                .build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        assertDoesNotThrow(() -> msg.write(baos));
+        // subenc byte + count byte (0) = 2 bytes
+        assertEquals(2, baos.size());
+    }
+
+    // -----------------------------------------------------------------------
+    // RfbRectangleDispatch: encoding type 21 (JPEG) → UnsupportedOperationException
+    // -----------------------------------------------------------------------
+
+    /**
+     * Encoding type 21 (JPEG) throws UnsupportedOperationException in dispatch
+     * because JPEG encoding has no length prefix and cannot self-delimit.
+     */
+    @Test
+    void testRfbRectangleDispatch_jpegEncoding_throwsUOE() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        java.io.DataOutputStream dos = new java.io.DataOutputStream(baos);
+        dos.writeShort(0);   // x
+        dos.writeShort(0);   // y
+        dos.writeShort(4);   // width
+        dos.writeShort(4);   // height
+        dos.writeInt(21);    // encoding type = JPEG (unsupported for self-delimited reads)
+        byte[] bytes = baos.toByteArray();
+
+        assertThrows(UnsupportedOperationException.class,
+                () -> RfbRectangle.read(new ByteArrayInputStream(bytes), PF_32BPP));
+    }
+
+    // -----------------------------------------------------------------------
+    // KeyEvent.read with down=false
+    // -----------------------------------------------------------------------
+
+    /**
+     * KeyEventImpl.read() has {@code boolean down = dis.readUnsignedByte() != 0}.
+     * The false branch (down=false) covers the != 0 → false path.
+     */
+    @Test
+    void testKeyEvent_read_downFalse() throws IOException {
+        KeyEvent orig = KeyEvent.newBuilder().down(false).key(0x41).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        orig.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // write() includes message-type byte[0]; read() starts after it
+        KeyEvent copy = KeyEvent.read(new ByteArrayInputStream(bytes, 1, bytes.length - 1));
+        assertFalse(copy.down());
+        assertEquals(0x41, copy.key());
+    }
+
+    // -----------------------------------------------------------------------
+    // EnableContinuousUpdates.read with enable=false
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testEnableContinuousUpdates_read_enableFalse() throws IOException {
+        EnableContinuousUpdates orig = EnableContinuousUpdates.newBuilder()
+                .enable(false).x(0).y(0).width(800).height(600).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        orig.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // write() includes message-type byte[0]; read() starts after it
+        EnableContinuousUpdates copy = EnableContinuousUpdates.read(
+                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
+        assertFalse(copy.enable());
+    }
+
+    // -----------------------------------------------------------------------
+    // GiiServerVersion.read with bigEndian=false
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testGiiServerVersion_read_littleEndian() throws IOException {
+        GiiServerVersion orig = GiiServerVersion.newBuilder()
+                .bigEndian(false).maximumVersion(2).minimumVersion(1).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        orig.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // read() starts after message-type byte (byte[0])
+        GiiServerVersion copy = GiiServerVersion.read(
+                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
+        assertFalse(copy.bigEndian());
+        assertEquals(2, copy.maximumVersion());
+        assertEquals(1, copy.minimumVersion());
+    }
+
+    // -----------------------------------------------------------------------
+    // GiiDeviceCreation round-trip with bigEndian=false
+    // -----------------------------------------------------------------------
+
+    @Test
+    void testGiiDeviceCreation_readRoundTrip_littleEndian() throws IOException {
+        GiiDeviceCreation orig = GiiDeviceCreation.newBuilder()
+                .bigEndian(false).deviceName("TestLE")
+                .vendorId(1L).productId(2L).canGenerate(3L)
+                .numRegisters(0L).numButtons(1L)
+                .valuators(List.of()).build();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        orig.write(baos);
+        byte[] bytes = baos.toByteArray();
+        // read() starts after message-type byte (byte[0])
+        GiiDeviceCreation copy = GiiDeviceCreation.read(
+                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
+        assertFalse(copy.bigEndian());
+        assertEquals("TestLE", copy.deviceName());
+        assertEquals(1L, copy.vendorId());
+    }
+}
