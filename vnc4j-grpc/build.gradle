@@ -1,0 +1,44 @@
+plugins {
+    id 'java'
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+// Generated protobuf/gRPC code does not ship module-info.java,
+// so disable JPMS module-path inference for this subproject.
+java {
+    modularity.inferModulePath = false
+}
+
+dependencies {
+    implementation platform('io.grpc:grpc-bom:1.65.1')
+    implementation 'io.grpc:grpc-protobuf'
+    implementation 'io.grpc:grpc-stub'
+    implementation 'io.grpc:grpc-netty-shaded'
+
+    // Needed for @javax.annotation.Generated on Java 9+
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+
+    testImplementation platform('org.junit:junit-bom:5.11.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+protobuf {
+    protoc {
+        artifact = 'com.google.protobuf:protoc:3.25.3'
+    }
+    plugins {
+        grpc {
+            artifact = 'io.grpc:protoc-gen-grpc-java:1.65.1'
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+test {
+    useJUnitPlatform()
+}
