@@ -26,22 +26,17 @@ public final class RfbRectangleDispatch {
             case 0    -> RfbRectangleRawImpl.readPayload(dis, x, y, w, h, pf);
             case 1    -> RfbRectangleCopyRectImpl.readPayload(dis, x, y, w, h, pf);
             case 2    -> RfbRectangleRreImpl.readPayload(dis, x, y, w, h, pf);
-            case 4    -> RfbRectangleCoRreImpl.readPayload(dis, x, y, w, h, pf);
             case 5    -> RfbRectangleHextileImpl.readPayload(dis, x, y, w, h, pf);
             case 6    -> RfbRectangleZlibImpl.readPayload(dis, x, y, w, h, pf);
             case 7    -> readTight(dis, x, y, w, h, pf);
-            case 8    -> RfbRectangleZlibHexImpl.readPayload(dis, x, y, w, h, pf);
             case 16   -> RfbRectangleZrleImpl.readPayload(dis, x, y, w, h, pf);
             case 21   -> throw new UnsupportedOperationException(
                                 "JPEG encoding (type 21) has no length prefix; cannot self-delimit on read");
-            case 50   -> RfbRectangleH264Impl.readPayload(dis, x, y, w, h, pf);
             case -260 -> readTightPng(dis, x, y, w, h, pf);
             case -223 -> RfbRectangleDesktopSizeImpl.readPayload(dis, x, y, w, h, pf);
             case -224 -> RfbRectangleLastRectImpl.readPayload(dis, x, y, w, h, pf);
             case -239 -> RfbRectangleCursorImpl.readPayload(dis, x, y, w, h, pf);
-            case -240 -> RfbRectangleXCursorImpl.readPayload(dis, x, y, w, h, pf);
             case -308 -> RfbRectangleExtendedDesktopSizeImpl.readPayload(dis, x, y, w, h, pf);
-            case -314 -> RfbRectangleCursorWithAlphaImpl.readPayload(dis, x, y, w, h, pf);
             default   -> throw new UnsupportedOperationException("Unknown encoding type: " + enc);
         };
     }

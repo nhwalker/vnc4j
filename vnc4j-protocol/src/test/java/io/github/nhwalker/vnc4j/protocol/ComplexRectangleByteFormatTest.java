@@ -9,7 +9,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests verifying that complex rectangle encodings (Raw, RRE, CoRRE, Hextile)
+ * Unit tests verifying that complex rectangle encodings (Raw, RRE, Hextile)
  * conform to the byte-level format specified in the RFB protocol specification
  * (rfbproto.rst.txt).
  */
@@ -198,109 +198,6 @@ class ComplexRectangleByteFormatTest {
         // subrect height=2 (U16)
         assertEquals((byte) 0, bytes[24]);
         assertEquals((byte) 2, bytes[25]);
-    }
-
-    // -----------------------------------------------------------------------
-    // CoRreSubrect
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the CoRreSubrect byte format.
-     *
-     * <pre>
-     * From rfbproto.rst.txt - CoRRE Encoding subrect:
-     *
-     *   Each subrect is the same as RRE except coordinates and dimensions
-     *   are U8 (1 byte each, range 0-255 since tiles are at most 255x255):
-     *
-     *   =============== =============================== =======================
-     *   No. of bytes    Type                            Description
-     *   =============== =============================== =======================
-     *   bytesPerPixel   U8 array                        pixel value
-     *   1               U8                              x-position
-     *   1               U8                              y-position
-     *   1               U8                              width
-     *   1               U8                              height
-     *   =============== =============================== =======================
-     * </pre>
-     */
-    @Test
-    void testCoRreSubrect_byteFormat() throws IOException {
-        CoRreSubrect sr = CoRreSubrect.newBuilder()
-                .pixel(new byte[]{0x42})
-                .x(10).y(20).width(5).height(6)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        sr.write(baos);
-        byte[] bytes = baos.toByteArray();
-
-        // 1 (pixel) + 1 (x) + 1 (y) + 1 (w) + 1 (h) = 5 bytes
-        assertEquals(5, bytes.length);
-        assertEquals((byte) 0x42, bytes[0], "pixel value");
-        assertEquals((byte) 10, bytes[1], "x = 10");
-        assertEquals((byte) 20, bytes[2], "y = 20");
-        assertEquals((byte) 5, bytes[3], "width = 5");
-        assertEquals((byte) 6, bytes[4], "height = 6");
-    }
-
-    // -----------------------------------------------------------------------
-    // CoRRE Rectangle
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the CoRRE rectangle byte format (encoding type 4).
-     *
-     * <pre>
-     * From rfbproto.rst.txt - CoRRE Encoding:
-     *
-     *   CoRRE is a variant of RRE with U8 coordinates/dimensions to save
-     *   bytes in the common case of small rectangles.
-     *
-     *   =============== =============================== =======================
-     *   No. of bytes    Type                            Description
-     *   =============== =============================== =======================
-     *   4               U32                             number-of-subrects
-     *   bytesPerPixel   U8 array                        background-pixel-value
-     *   (repeated:)
-     *   bytesPerPixel   U8 array                        subrect-pixel-value
-     *   1               U8                              x-position
-     *   1               U8                              y-position
-     *   1               U8                              width
-     *   1               U8                              height
-     *   =============== =============================== =======================
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleCoRre_byteFormat() throws IOException {
-        CoRreSubrect sub = CoRreSubrect.newBuilder()
-                .pixel(new byte[]{(byte) 0xAB})
-                .x(1).y(2).width(3).height(4)
-                .build();
-        RfbRectangleCoRre rect = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(8).height(8)
-                .background(new byte[]{0x00})
-                .subrects(List.of(sub))
-                .build();
-        byte[] bytes = serialize(rect::write);
-
-        // 12 (header) + 4 (count) + 1 (bg) + 5 (subrect) = 22 bytes
-        assertEquals(22, bytes.length);
-        assertRectHeader(bytes, 0, 0, 8, 8, RfbRectangleCoRre.ENCODING_TYPE);
-
-        // count = 1 as big-endian U32
-        assertEquals((byte) 0, bytes[12]);
-        assertEquals((byte) 0, bytes[13]);
-        assertEquals((byte) 0, bytes[14]);
-        assertEquals((byte) 1, bytes[15]);
-        // background = 0x00
-        assertEquals((byte) 0x00, bytes[16]);
-        // subrect pixel = 0xAB
-        assertEquals((byte) 0xAB, bytes[17]);
-        // subrect U8 coords
-        assertEquals((byte) 1, bytes[18], "x = 1");
-        assertEquals((byte) 2, bytes[19], "y = 2");
-        assertEquals((byte) 3, bytes[20], "width = 3");
-        assertEquals((byte) 4, bytes[21], "height = 4");
     }
 
     // -----------------------------------------------------------------------

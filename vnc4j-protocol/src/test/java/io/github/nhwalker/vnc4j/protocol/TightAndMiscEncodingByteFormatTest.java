@@ -9,7 +9,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Unit tests verifying Tight, JPEG, H.264, and ZlibHex rectangle encoding byte formats
+ * Unit tests verifying Tight and JPEG rectangle encoding byte formats
  * against the RFB protocol specification (rfbproto.rst.txt).
  */
 class TightAndMiscEncodingByteFormatTest {
@@ -276,112 +276,6 @@ class TightAndMiscEncodingByteFormatTest {
         // JPEG EOI
         assertEquals((byte) 0xFF, bytes[16]);
         assertEquals((byte) 0xD9, bytes[17]);
-    }
-
-    // -----------------------------------------------------------------------
-    // H.264 encoding (encoding type 50)
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the H.264 rectangle byte format (encoding type 50).
-     *
-     * <pre>
-     * From rfbproto.rst.txt - H.264 Encoding:
-     *
-     *   =============== =============================== =======================
-     *   No. of bytes    Type                            Description
-     *   =============== =============================== =======================
-     *   4               U32                             length of H.264 data
-     *   4               U32                             flags
-     *   length          U8 array                        H.264 data
-     *   =============== =============================== =======================
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleH264_byteFormat() throws IOException {
-        byte[] h264Data = new byte[]{0x00, 0x00, 0x00, 0x01, 0x67}; // SPS NAL unit
-        RfbRectangleH264 rect = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(1920).height(1080)
-                .flags(1)
-                .data(h264Data)
-                .build();
-        byte[] bytes = serialize(rect::write);
-
-        // 12 (header) + 4 (length) + 4 (flags) + 5 (h264 data) = 25 bytes
-        assertEquals(25, bytes.length);
-        assertRectHeader(bytes, 0, 0, 1920, 1080, RfbRectangleH264.ENCODING_TYPE);
-
-        // length = 5 as big-endian U32
-        assertEquals((byte) 0, bytes[12]);
-        assertEquals((byte) 0, bytes[13]);
-        assertEquals((byte) 0, bytes[14]);
-        assertEquals((byte) 5, bytes[15]);
-        // flags = 1 as big-endian U32
-        assertEquals((byte) 0, bytes[16]);
-        assertEquals((byte) 0, bytes[17]);
-        assertEquals((byte) 0, bytes[18]);
-        assertEquals((byte) 1, bytes[19]);
-        // H.264 data starts at offset 20
-        assertEquals((byte) 0x00, bytes[20]);
-        assertEquals((byte) 0x00, bytes[21]);
-        assertEquals((byte) 0x00, bytes[22]);
-        assertEquals((byte) 0x01, bytes[23]);
-        assertEquals((byte) 0x67, bytes[24]);
-    }
-
-    // -----------------------------------------------------------------------
-    // ZlibHex encoding (encoding type 8)
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the ZlibHex rectangle byte format (encoding type 8).
-     *
-     * <pre>
-     * From rfbproto.rst.txt - ZlibHex Encoding:
-     *
-     *   ZlibHex is a variant of Hextile encoding where the raw and subrect
-     *   data can optionally be zlib-compressed.
-     *
-     *   The rectangle is divided into 16x16 tiles. Each tile has a subencoding
-     *   byte with the same basic structure as Hextile, plus extra bits for zlib.
-     *
-     *   Additional subencoding bits (beyond Hextile's 5):
-     *     32 (0x20) = ZlibRaw: raw tile data is zlib-compressed
-     *     64 (0x40) = Zlib:    subrect data is zlib-compressed
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleZlibHex_rawTile_byteFormat() throws IOException {
-        // ZlibHex with a simple raw (uncompressed) tile
-        ZlibHexTile tile = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_RAW)
-                .rawPixels(new byte[]{0x01, 0x02})
-                .build();
-        RfbRectangleZlibHex rect = RfbRectangleZlibHex.newBuilder()
-                .x(0).y(0).width(2).height(1)
-                .tiles(List.of(tile))
-                .build();
-        byte[] bytes = serialize(rect::write);
-
-        // 12 (header) + 1 (subencoding) + 2 (raw pixels) = 15 bytes
-        assertEquals(15, bytes.length);
-        assertRectHeader(bytes, 0, 0, 2, 1, RfbRectangleZlibHex.ENCODING_TYPE);
-
-        assertEquals((byte) ZlibHexTile.SUBENC_RAW, bytes[12], "subencoding = Raw");
-        assertEquals((byte) 0x01, bytes[13]);
-        assertEquals((byte) 0x02, bytes[14]);
-    }
-
-    @Test
-    void testZlibHexTile_subencodingConstants() {
-        // ZlibHex adds two extra bits to Hextile subencoding
-        assertEquals(1, ZlibHexTile.SUBENC_RAW);
-        assertEquals(2, ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED);
-        assertEquals(4, ZlibHexTile.SUBENC_FOREGROUND_SPECIFIED);
-        assertEquals(8, ZlibHexTile.SUBENC_ANY_SUBRECTS);
-        assertEquals(16, ZlibHexTile.SUBENC_SUBRECTS_COLOURED);
-        assertEquals(32, ZlibHexTile.SUBENC_ZLIB_RAW, "ZlibRaw = 32");
-        assertEquals(64, ZlibHexTile.SUBENC_ZLIB, "Zlib = 64");
     }
 
     // -----------------------------------------------------------------------

@@ -106,91 +106,12 @@ class BuilderFromMethodTest {
     }
 
     @Test
-    void testQemuExtendedKeyEvent_from() {
-        QemuExtendedKeyEvent orig = QemuExtendedKeyEvent.newBuilder()
-                .downFlag(1).keysym(0x41).keycode(30).build();
-        QemuExtendedKeyEvent copy = QemuExtendedKeyEvent.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testQemuAudioClientSetFormat_from() {
-        QemuAudioClientSetFormat orig = QemuAudioClientSetFormat.newBuilder()
-                .sampleFormat(0).nchannels(2).frequency(44100).build();
-        QemuAudioClientSetFormat copy = QemuAudioClientSetFormat.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testGiiClientVersion_from() {
-        GiiClientVersion orig = GiiClientVersion.newBuilder().bigEndian(true).version(2).build();
-        GiiClientVersion copy = GiiClientVersion.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testGiiServerVersion_from() {
-        GiiServerVersion orig = GiiServerVersion.newBuilder().bigEndian(false).maximumVersion(2).minimumVersion(1).build();
-        GiiServerVersion copy = GiiServerVersion.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testGiiDeviceDestruction_from() {
-        GiiDeviceDestruction orig = GiiDeviceDestruction.newBuilder()
-                .bigEndian(true).deviceOrigin(0xDEADBEEFL).build();
-        GiiDeviceDestruction copy = GiiDeviceDestruction.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testGiiDeviceCreationResponse_from() {
-        GiiDeviceCreationResponse orig = GiiDeviceCreationResponse.newBuilder()
-                .bigEndian(true).deviceOrigin(1L).build();
-        GiiDeviceCreationResponse copy = GiiDeviceCreationResponse.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testGiiValuator_from() {
-        GiiValuator orig = GiiValuator.newBuilder()
-                .index(0).longName("X axis").shortName("X")
-                .rangeMin(-1000).rangeCenter(0).rangeMax(1000)
-                .siUnit(0).siAdd(0).siMul(1).siDiv(1).siShift(0).build();
-        GiiValuator copy = GiiValuator.newBuilder().from(orig).build();
-        assertEquals(orig.index(), copy.index());
-        assertEquals(orig.longName(), copy.longName());
-    }
-
-    @Test
-    void testGiiDeviceCreation_from() {
-        GiiDeviceCreation orig = GiiDeviceCreation.newBuilder()
-                .bigEndian(true).deviceName("TestDevice")
-                .vendorId(0L).productId(0L).canGenerate(0L)
-                .numRegisters(0L).numButtons(5L)
-                .valuators(List.of()).build();
-        GiiDeviceCreation copy = GiiDeviceCreation.newBuilder().from(orig).build();
-        assertEquals(orig.deviceName(), copy.deviceName());
-        assertEquals(orig.numButtons(), copy.numButtons());
-    }
-
-    @Test
     void testRfbRectangleRre_from() {
         RreSubrect sr = RreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(2).height(2).build();
         RfbRectangleRre orig = RfbRectangleRre.newBuilder()
                 .x(0).y(0).width(4).height(4)
                 .background(new byte[]{0}).subrects(List.of(sr)).build();
         RfbRectangleRre copy = RfbRectangleRre.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testRfbRectangleCoRre_from() {
-        CoRreSubrect sr = CoRreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(2).height(2).build();
-        RfbRectangleCoRre orig = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(4).height(4)
-                .background(new byte[]{0}).subrects(List.of(sr)).build();
-        RfbRectangleCoRre copy = RfbRectangleCoRre.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 
@@ -208,14 +129,6 @@ class BuilderFromMethodTest {
         RfbRectangleExtendedDesktopSize orig = RfbRectangleExtendedDesktopSize.newBuilder()
                 .x(0).y(0).width(1920).height(1080).screens(List.of(screen)).build();
         RfbRectangleExtendedDesktopSize copy = RfbRectangleExtendedDesktopSize.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testRfbRectangleH264_from() {
-        RfbRectangleH264 orig = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{1}).build();
-        RfbRectangleH264 copy = RfbRectangleH264.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 

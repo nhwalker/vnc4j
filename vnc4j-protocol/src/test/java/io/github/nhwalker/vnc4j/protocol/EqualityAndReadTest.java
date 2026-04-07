@@ -14,8 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * Tests for equals/hashCode/toString and read() round-trips for various types
  * that are not adequately covered by the byte-format tests alone.
  *
- * <p>Covers: RreSubrect, CoRreSubrect, HextileSubrect, HextileTile, ZlibHexTile,
- * ZlibHexTile read paths, SecurityTypes, and various RfbRectangle types.
+ * <p>Covers: RreSubrect, HextileSubrect, HextileTile, SecurityTypes, and various RfbRectangle types.
  */
 class EqualityAndReadTest {
 
@@ -76,50 +75,6 @@ class EqualityAndReadTest {
     void testRreSubrect_fromBuilder() {
         RreSubrect original = RreSubrect.newBuilder().pixel(new byte[]{0x55}).x(1).y(2).width(3).height(4).build();
         RreSubrect copy = RreSubrect.newBuilder().from(original).build();
-        assertEquals(original, copy);
-    }
-
-    // -----------------------------------------------------------------------
-    // CoRreSubrect
-    // -----------------------------------------------------------------------
-
-    /**
-     * CoRRE subrect uses U8 for x, y, width, height (not U16 like RRE).
-     * <pre>
-     * pixel-value  : bytesPerPixel
-     * x            : U8
-     * y            : U8
-     * width        : U8
-     * height       : U8
-     * </pre>
-     */
-    @Test
-    void testCoRreSubrect_readRoundTrip() throws IOException {
-        CoRreSubrect original = CoRreSubrect.newBuilder()
-                .pixel(new byte[]{0x7F}).x(5).y(9).width(3).height(2).build();
-        byte[] bytes = serialize(original::write);
-        CoRreSubrect copy = CoRreSubrect.read(streamOf(bytes), 1);
-        assertEquals(original, copy);
-        assertEquals(original.hashCode(), copy.hashCode());
-    }
-
-    @Test
-    void testCoRreSubrect_equals_differentPixel() {
-        CoRreSubrect a = CoRreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(2).height(2).build();
-        CoRreSubrect b = CoRreSubrect.newBuilder().pixel(new byte[]{2}).x(0).y(0).width(2).height(2).build();
-        assertNotEquals(a, b);
-    }
-
-    @Test
-    void testCoRreSubrect_toString() {
-        CoRreSubrect s = CoRreSubrect.newBuilder().pixel(new byte[]{0x22}).x(1).y(2).width(3).height(4).build();
-        assertNotNull(s.toString());
-    }
-
-    @Test
-    void testCoRreSubrect_fromBuilder() {
-        CoRreSubrect original = CoRreSubrect.newBuilder().pixel(new byte[]{(byte)0xAA}).x(3).y(7).width(5).height(2).build();
-        CoRreSubrect copy = CoRreSubrect.newBuilder().from(original).build();
         assertEquals(original, copy);
     }
 
@@ -256,111 +211,6 @@ class EqualityAndReadTest {
     }
 
     // -----------------------------------------------------------------------
-    // ZlibHexTile read paths
-    // -----------------------------------------------------------------------
-
-    /**
-     * ZlibHexTile with SUBENC_ZLIB_RAW (32): the entire raw tile data is zlib-compressed.
-     * Wire format: U8 subencoding, U16 length, &lt;length bytes of zlib-compressed data&gt;
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_zlibRaw() throws IOException {
-        byte[] zlibData = {0x78, (byte) 0x9C, 0x01}; // fake zlib data
-        ZlibHexTile original = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
-                .zlibRawData(zlibData).build();
-        byte[] bytes = serialize(original::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 8, 8, 1);
-        assertEquals(ZlibHexTile.SUBENC_ZLIB_RAW, copy.subencoding());
-        assertArrayEquals(zlibData, copy.zlibRawData());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_RAW (1): plain uncompressed raw pixel data follows.
-     * Size = tileWidth * tileHeight * bytesPerPixel.
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_rawPixels() throws IOException {
-        byte[] pixels = {0x01, 0x02, 0x03, 0x04}; // 2x2 tile, 1bpp
-        ZlibHexTile original = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_RAW)
-                .rawPixels(pixels).build();
-        byte[] bytes = serialize(original::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 2, 2, 1);
-        assertEquals(ZlibHexTile.SUBENC_RAW, copy.subencoding());
-        assertArrayEquals(pixels, copy.rawPixels());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_BACKGROUND_SPECIFIED | SUBENC_FOREGROUND_SPECIFIED (2+4=6):
-     * background pixel bytes, then foreground pixel bytes (no subrects).
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_bgAndFg() throws IOException {
-        ZlibHexTile original = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED | ZlibHexTile.SUBENC_FOREGROUND_SPECIFIED)
-                .background(new byte[]{0x11})
-                .foreground(new byte[]{0x22}).build();
-        byte[] bytes = serialize(original::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 8, 8, 1);
-        assertArrayEquals(new byte[]{0x11}, copy.background());
-        assertArrayEquals(new byte[]{0x22}, copy.foreground());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_ANY_SUBRECTS | SUBENC_ZLIB (8+64=72): background, then
-     * U16 length, then zlib-compressed subrect data.
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_zlibSubrects() throws IOException {
-        byte[] zlibSub = {0x78, (byte) 0x9C, 0x02};
-        ZlibHexTile original = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED
-                        | ZlibHexTile.SUBENC_ANY_SUBRECTS
-                        | ZlibHexTile.SUBENC_ZLIB)
-                .background(new byte[]{0x44})
-                .zlibSubrectData(zlibSub).build();
-        byte[] bytes = serialize(original::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 8, 8, 1);
-        assertArrayEquals(zlibSub, copy.zlibSubrectData());
-    }
-
-    @Test
-    void testZlibHexTile_equals() {
-        ZlibHexTile a = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW).zlibRawData(new byte[]{1, 2}).build();
-        ZlibHexTile b = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW).zlibRawData(new byte[]{1, 2}).build();
-        assertEquals(a, b);
-        assertEquals(a.hashCode(), b.hashCode());
-    }
-
-    @Test
-    void testZlibHexTile_notEquals() {
-        ZlibHexTile a = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW).zlibRawData(new byte[]{1}).build();
-        ZlibHexTile b = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW).zlibRawData(new byte[]{2}).build();
-        assertNotEquals(a, b);
-    }
-
-    @Test
-    void testZlibHexTile_toString() {
-        ZlibHexTile t = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_RAW).rawPixels(new byte[]{0x01}).build();
-        assertNotNull(t.toString());
-        assertFalse(t.toString().isEmpty());
-    }
-
-    @Test
-    void testZlibHexTile_fromBuilder() {
-        ZlibHexTile orig = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW).zlibRawData(new byte[]{0x7F}).build();
-        ZlibHexTile copy = ZlibHexTile.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    // -----------------------------------------------------------------------
     // SecurityTypes read round-trip
     // -----------------------------------------------------------------------
 
@@ -470,17 +320,6 @@ class EqualityAndReadTest {
                 .x(0).y(0).width(4).height(4).zlibData(new byte[]{3, 4}).build();
         RfbRectangleZrle b = RfbRectangleZrle.newBuilder()
                 .x(0).y(0).width(4).height(4).zlibData(new byte[]{3, 4}).build();
-        assertEquals(a, b);
-        assertEquals(a.hashCode(), b.hashCode());
-        assertNotNull(a.toString());
-    }
-
-    @Test
-    void testRfbRectangleH264_equals() {
-        RfbRectangleH264 a = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{0x01}).build();
-        RfbRectangleH264 b = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{0x01}).build();
         assertEquals(a, b);
         assertEquals(a.hashCode(), b.hashCode());
         assertNotNull(a.toString());
@@ -692,17 +531,4 @@ class EqualityAndReadTest {
         assertNotNull(a.toString());
     }
 
-    @Test
-    void testRfbRectangleCoRre_equals() {
-        CoRreSubrect sr = CoRreSubrect.newBuilder().pixel(new byte[]{0x44}).x(0).y(0).width(2).height(2).build();
-        RfbRectangleCoRre a = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(4).height(4)
-                .background(new byte[]{0x00}).subrects(List.of(sr)).build();
-        RfbRectangleCoRre b = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(4).height(4)
-                .background(new byte[]{0x00}).subrects(List.of(sr)).build();
-        assertEquals(a, b);
-        assertEquals(a.hashCode(), b.hashCode());
-        assertNotNull(a.toString());
-    }
 }

@@ -1,7 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol;
 
 import io.github.nhwalker.vnc4j.protocol.internal.ClientMessageDispatch;
-import io.github.nhwalker.vnc4j.protocol.internal.GiiEventDispatch;
 import io.github.nhwalker.vnc4j.protocol.internal.RfbRectangleDispatch;
 import io.github.nhwalker.vnc4j.protocol.internal.ServerMessageDispatch;
 import org.junit.jupiter.api.Test;
@@ -16,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for the dispatch classes: {@link ClientMessageDispatch}, {@link ServerMessageDispatch},
- * {@link RfbRectangleDispatch}, and {@link GiiEventDispatch}.
+ * {@link RfbRectangleDispatch}.
  *
  * <p>Each dispatch class reads the message-type byte and routes to the correct reader.
  * These tests verify that the round-trip through the dispatcher produces the correct
@@ -275,17 +274,6 @@ class DispatchTest {
     }
 
     @Test
-    void testRectangleDispatch_h264() throws IOException {
-        RfbRectangleH264 msg = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16)
-                .flags(0).data(new byte[]{0x00, 0x01, 0x02}).build();
-        byte[] bytes = serialize(msg::write);
-        RfbRectangle result = RfbRectangleDispatch.read(streamOf(bytes), PIXEL_FORMAT);
-        assertInstanceOf(RfbRectangleH264.class, result);
-        assertArrayEquals(new byte[]{0x00, 0x01, 0x02}, ((RfbRectangleH264) result).data());
-    }
-
-    @Test
     void testRectangleDispatch_extendedDesktopSize() throws IOException {
         Screen screen = Screen.newBuilder().id(1).x(0).y(0).width(1920).height(1080).flags(0).build();
         RfbRectangleExtendedDesktopSize msg = RfbRectangleExtendedDesktopSize.newBuilder()
@@ -354,72 +342,6 @@ class DispatchTest {
         }
         assertThrows(UnsupportedOperationException.class,
                 () -> RfbRectangleDispatch.read(streamOf(baos.toByteArray()), PIXEL_FORMAT));
-    }
-
-    // -----------------------------------------------------------------------
-    // GiiEventDispatch
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies that GiiEventDispatch routes eventType=5 (key press) to GiiKeyEvent.
-     *
-     * <p>GII event wire format: U8 event-size, U8 event-type, then type-specific fields.
-     * Key events are types 5 (key-press), 6 (key-release), 7 (key-repeat).
-     * Pointer move events are types 8, 9.
-     * Pointer button events are types 10 (press), 11 (release).
-     * Valuator events are types 12 (relative), 13 (absolute).
-     */
-    @Test
-    void testGiiEventDispatch_keyEvent() throws IOException {
-        GiiKeyEvent event = GiiKeyEvent.newBuilder()
-                .eventType(5).deviceOrigin(1L).modifiers(0L)
-                .symbol(0x61L).label(0L).button(0L).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        event.write(baos, true);
-        GiiEvent result = GiiEventDispatch.readEvent(streamOf(baos.toByteArray()), true);
-        assertInstanceOf(GiiKeyEvent.class, result);
-        assertEquals(0x61L, ((GiiKeyEvent) result).symbol());
-    }
-
-    @Test
-    void testGiiEventDispatch_pointerMoveEvent() throws IOException {
-        GiiPointerMoveEvent event = GiiPointerMoveEvent.newBuilder()
-                .eventType(8).deviceOrigin(2L)
-                .x(100).y(200).z(0).wheel(0).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        event.write(baos, true);
-        GiiEvent result = GiiEventDispatch.readEvent(streamOf(baos.toByteArray()), true);
-        assertInstanceOf(GiiPointerMoveEvent.class, result);
-    }
-
-    @Test
-    void testGiiEventDispatch_pointerButtonEvent() throws IOException {
-        GiiPointerButtonEvent event = GiiPointerButtonEvent.newBuilder()
-                .eventType(10).deviceOrigin(1L).buttonNumber(1L).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        event.write(baos, true);
-        GiiEvent result = GiiEventDispatch.readEvent(streamOf(baos.toByteArray()), true);
-        assertInstanceOf(GiiPointerButtonEvent.class, result);
-        assertEquals(1L, ((GiiPointerButtonEvent) result).buttonNumber());
-    }
-
-    @Test
-    void testGiiEventDispatch_valuatorEvent() throws IOException {
-        GiiValuatorEvent event = GiiValuatorEvent.newBuilder()
-                .eventType(13).deviceOrigin(1L)
-                .first(0L).values(List.of(512)).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        event.write(baos, true);
-        GiiEvent result = GiiEventDispatch.readEvent(streamOf(baos.toByteArray()), true);
-        assertInstanceOf(GiiValuatorEvent.class, result);
-    }
-
-    @Test
-    void testGiiEventDispatch_unknownType_returnsNull() throws IOException {
-        // Unknown event type with event-size=4 (2 header + 2 unknown data)
-        byte[] bytes = {4, (byte) 99, 0, 0}; // size=4, type=99, 2 padding bytes
-        GiiEvent result = GiiEventDispatch.readEvent(streamOf(bytes), true);
-        assertNull(result);
     }
 
     // -----------------------------------------------------------------------

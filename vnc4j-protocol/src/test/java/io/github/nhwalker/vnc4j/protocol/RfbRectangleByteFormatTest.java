@@ -407,115 +407,6 @@ class RfbRectangleByteFormatTest {
     }
 
     // -----------------------------------------------------------------------
-    // XCursor
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the XCursor pseudo-encoding rectangle byte format (encoding type -240).
-     *
-     * <pre>
-     * From rfbproto.rst.txt - XCursor Pseudo-encoding:
-     *
-     *   The XCursor pseudo-encoding is similar to the Cursor pseudo-encoding
-     *   but uses two colours (primary and secondary) as a bitmask.
-     *
-     *   =============== =============================== =======================
-     *   No. of bytes    Type                            Description
-     *   =============== =============================== =======================
-     *   1               U8                              primary-r
-     *   1               U8                              primary-g
-     *   1               U8                              primary-b
-     *   1               U8                              secondary-r
-     *   1               U8                              secondary-g
-     *   1               U8                              secondary-b
-     *   floor((w+7)/8)*h    U8 array                   cursor-pixels (bitmap)
-     *   floor((w+7)/8)*h    U8 array                   cursor-bitmask
-     *   =============== =============================== =======================
-     *
-     *   (This colour data is only present when width > 0 and height > 0.)
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleXCursor_byteFormat() throws IOException {
-        // 2x2 cursor; mask row bytes = floor((2+7)/8) = 1, total = 1*2 = 2 bytes each
-        byte[] bitmap = new byte[]{(byte) 0xC0, (byte) 0x80};
-        byte[] bitmask = new byte[]{(byte) 0xFF, (byte) 0xC0};
-        RfbRectangleXCursor rect = RfbRectangleXCursor.newBuilder()
-                .x(0).y(0).width(2).height(2)
-                .primaryR(255).primaryG(0).primaryB(0)
-                .secondaryR(0).secondaryG(0).secondaryB(255)
-                .bitmap(bitmap).bitmask(bitmask)
-                .build();
-        byte[] bytes = serialize(rect::write);
-
-        // 12 (header) + 6 (colours) + 2 (bitmap) + 2 (bitmask) = 22 bytes
-        assertEquals(22, bytes.length);
-        assertRectHeader(bytes, 0, 0, 2, 2, RfbRectangleXCursor.ENCODING_TYPE);
-
-        // primary colour
-        assertEquals((byte) 255, bytes[12], "primary-r");
-        assertEquals((byte) 0, bytes[13], "primary-g");
-        assertEquals((byte) 0, bytes[14], "primary-b");
-        // secondary colour
-        assertEquals((byte) 0, bytes[15], "secondary-r");
-        assertEquals((byte) 0, bytes[16], "secondary-g");
-        assertEquals((byte) 255, bytes[17], "secondary-b");
-        // bitmap
-        assertEquals((byte) 0xC0, bytes[18]);
-        assertEquals((byte) 0x80, bytes[19]);
-        // bitmask
-        assertEquals((byte) 0xFF, bytes[20]);
-        assertEquals((byte) 0xC0, bytes[21]);
-    }
-
-    // -----------------------------------------------------------------------
-    // CursorWithAlpha
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies the CursorWithAlpha pseudo-encoding rectangle byte format (encoding type -314).
-     *
-     * <pre>
-     * From rfbproto.rst.txt - CursorWithAlpha Pseudo-encoding:
-     *
-     *   The CursorWithAlpha pseudo-encoding provides a full RGBA cursor.
-     *
-     *   =============== =============================== =======================
-     *   No. of bytes    Type                            Description
-     *   =============== =============================== =======================
-     *   4               S32                             sub-encoding (raw = 0)
-     *   w*h*4           U8 array                        RGBA pixel data
-     *   =============== =============================== =======================
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleCursorWithAlpha_byteFormat() throws IOException {
-        // 1x1 RGBA cursor (4 bytes)
-        byte[] rgbaData = new byte[]{(byte) 0xFF, 0x00, 0x00, (byte) 0xFF}; // red, fully opaque
-        RfbRectangleCursorWithAlpha rect = RfbRectangleCursorWithAlpha.newBuilder()
-                .x(0).y(0).width(1).height(1)
-                .encoding(0)
-                .data(rgbaData)
-                .build();
-        byte[] bytes = serialize(rect::write);
-
-        // 12 (header) + 4 (sub-encoding) + 4 (RGBA data) = 20 bytes
-        assertEquals(20, bytes.length);
-        assertRectHeader(bytes, 0, 0, 1, 1, RfbRectangleCursorWithAlpha.ENCODING_TYPE);
-
-        // sub-encoding = 0 as big-endian S32
-        assertEquals((byte) 0, bytes[12]);
-        assertEquals((byte) 0, bytes[13]);
-        assertEquals((byte) 0, bytes[14]);
-        assertEquals((byte) 0, bytes[15]);
-        // RGBA data
-        assertEquals((byte) 0xFF, bytes[16]);
-        assertEquals((byte) 0x00, bytes[17]);
-        assertEquals((byte) 0x00, bytes[18]);
-        assertEquals((byte) 0xFF, bytes[19]);
-    }
-
-    // -----------------------------------------------------------------------
     // Encoding type constants
     // -----------------------------------------------------------------------
 
@@ -531,17 +422,14 @@ class RfbRectangleByteFormatTest {
      *   Raw                  0
      *   CopyRect             1
      *   RRE                  2
-     *   CoRRE                4
      *   Hextile              5
      *   Zlib                 6
      *   Tight                7
-     *   ZlibHex              8
      *   ZRLE                 16
      *   Cursor               -239 (0xFFFFFF11)
      *   DesktopSize          -223 (0xFFFFFF21)
      *   LastRect             -224 (0xFFFFFF20)
      *   ExtendedDesktopSize  -308 (0xFFFFFECC)
-     *   CursorWithAlpha      -314 (0xFFFFFEC6)
      *   ==================== =================
      * </pre>
      */
@@ -550,18 +438,14 @@ class RfbRectangleByteFormatTest {
         assertEquals(0, RfbRectangleRaw.ENCODING_TYPE);
         assertEquals(1, RfbRectangleCopyRect.ENCODING_TYPE);
         assertEquals(2, RfbRectangleRre.ENCODING_TYPE);
-        assertEquals(4, RfbRectangleCoRre.ENCODING_TYPE);
         assertEquals(5, RfbRectangleHextile.ENCODING_TYPE);
         assertEquals(6, RfbRectangleZlib.ENCODING_TYPE);
         assertEquals(7, RfbRectangleTight.ENCODING_TYPE);
-        assertEquals(8, RfbRectangleZlibHex.ENCODING_TYPE);
         assertEquals(16, RfbRectangleZrle.ENCODING_TYPE);
         assertEquals(-239, RfbRectangleCursor.ENCODING_TYPE);
-        assertEquals(-240, RfbRectangleXCursor.ENCODING_TYPE);
         assertEquals(-223, RfbRectangleDesktopSize.ENCODING_TYPE);
         assertEquals(-224, RfbRectangleLastRect.ENCODING_TYPE);
         assertEquals(-308, RfbRectangleExtendedDesktopSize.ENCODING_TYPE);
-        assertEquals(-314, RfbRectangleCursorWithAlpha.ENCODING_TYPE);
     }
 
     // -----------------------------------------------------------------------

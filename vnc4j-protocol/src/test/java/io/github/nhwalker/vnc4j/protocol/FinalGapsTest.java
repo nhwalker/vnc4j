@@ -65,15 +65,6 @@ class FinalGapsTest {
     }
 
     @Test
-    void testRfbRectangleCursorWithAlpha_equals_diffData() {
-        RfbRectangleCursorWithAlpha a = RfbRectangleCursorWithAlpha.newBuilder()
-                .x(0).y(0).width(0).height(0).data(new byte[]{1}).build();
-        RfbRectangleCursorWithAlpha b = RfbRectangleCursorWithAlpha.newBuilder()
-                .x(0).y(0).width(0).height(0).data(new byte[]{2}).build();
-        assertNotEquals(a, b);
-    }
-
-    @Test
     void testRfbRectangleCopyRect_equals_diffSrcY() {
         RfbRectangleCopyRect a = RfbRectangleCopyRect.newBuilder()
                 .x(0).y(0).width(1).height(1).srcX(0).srcY(10).build();
@@ -88,15 +79,6 @@ class FinalGapsTest {
                 .x(0).y(0).width(100).height(100).build();
         RfbRectangleDesktopSize b = RfbRectangleDesktopSize.newBuilder()
                 .x(0).y(0).width(100).height(200).build();
-        assertNotEquals(a, b);
-    }
-
-    @Test
-    void testRfbRectangleH264_equals_diffData() {
-        RfbRectangleH264 a = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{1}).build();
-        RfbRectangleH264 b = RfbRectangleH264.newBuilder()
-                .x(0).y(0).width(16).height(16).flags(0).data(new byte[]{2}).build();
         assertNotEquals(a, b);
     }
 
@@ -184,17 +166,6 @@ class FinalGapsTest {
     }
 
     @Test
-    void testRfbRectangleCoRre_equals_diffSubrects() {
-        CoRreSubrect sr1 = CoRreSubrect.newBuilder().pixel(new byte[]{0}).x(0).y(0).width(1).height(1).build();
-        CoRreSubrect sr2 = CoRreSubrect.newBuilder().pixel(new byte[]{1}).x(0).y(0).width(1).height(1).build();
-        RfbRectangleCoRre a = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr1)).build();
-        RfbRectangleCoRre b = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(List.of(sr2)).build();
-        assertNotEquals(a, b);
-    }
-
-    @Test
     void testRfbRectangleExtendedDesktopSize_equals_diffScreens() {
         Screen s1 = Screen.newBuilder().id(1).x(0).y(0).width(800).height(600).flags(0).build();
         Screen s2 = Screen.newBuilder().id(2).x(0).y(0).width(800).height(600).flags(0).build();
@@ -218,14 +189,6 @@ class FinalGapsTest {
     }
 
     @Test
-    void testRfbRectangleCursorWithAlpha_toString_nullData() {
-        RfbRectangleCursorWithAlpha msg = RfbRectangleCursorWithAlpha.newBuilder()
-                .x(0).y(0).width(0).height(0).data(null).build();
-        String s = msg.toString();
-        assertTrue(s.contains("null"), "toString should contain 'null' for null data");
-    }
-
-    @Test
     void testRfbRectangleJpeg_toString_nullData() {
         RfbRectangleJpeg msg = RfbRectangleJpeg.newBuilder()
                 .x(0).y(0).width(4).height(4).data(null).build();
@@ -243,20 +206,6 @@ class FinalGapsTest {
         RfbRectangleRre msg = RfbRectangleRre.newBuilder()
                 .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(null).build();
         assertNotNull(msg.subrects());
-    }
-
-    @Test
-    void testRfbRectangleCoRre_nullSubrects_constructor() {
-        RfbRectangleCoRre msg = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(1).height(1).background(new byte[]{0}).subrects(null).build();
-        assertNotNull(msg.subrects());
-    }
-
-    @Test
-    void testRfbRectangleZlibHex_nullTiles_constructor() {
-        RfbRectangleZlibHex msg = RfbRectangleZlibHex.newBuilder()
-                .x(0).y(0).width(16).height(16).tiles(null).build();
-        assertNotNull(msg.tiles());
     }
 
     @Test
@@ -328,66 +277,6 @@ class FinalGapsTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         assertDoesNotThrow(() -> msg.write(baos));
         assertTrue(baos.size() > 0);
-    }
-
-    @Test
-    void testGiiInjectEvents_nullEvents_write() throws IOException {
-        GiiInjectEvents msg = GiiInjectEvents.newBuilder().events(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        assertTrue(baos.size() > 0);
-    }
-
-    @Test
-    void testGiiValuatorEvent_nullValues_write() throws IOException {
-        GiiValuatorEvent msg = GiiValuatorEvent.newBuilder()
-                .deviceOrigin(0L).first(0L).values(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos, true));
-        assertTrue(baos.size() > 0);
-    }
-
-    // -----------------------------------------------------------------------
-    // GiiValuatorImpl.writeFixedUtf8 with null string (longName / shortName)
-    // -----------------------------------------------------------------------
-
-    /**
-     * GiiValuatorImpl.writeFixedUtf8() has:
-     * {@code byte[] bytes = s != null ? s.getBytes(...) : new byte[0]}.
-     * Passing null for longName and shortName covers the null branch.
-     */
-    @Test
-    void testGiiValuator_nullNames_write() throws IOException {
-        GiiValuator v = GiiValuator.newBuilder()
-                .index(0)
-                .longName(null)
-                .shortName(null)
-                .rangeMin(-100).rangeCenter(0).rangeMax(100)
-                .siUnit(0).siAdd(0).siMul(1).siDiv(1).siShift(0).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> v.write(baos, true));
-        assertTrue(baos.size() > 0);
-    }
-
-    // -----------------------------------------------------------------------
-    // ZlibHexTile SUBENC_ZLIB_RAW with null zlibRawData
-    // -----------------------------------------------------------------------
-
-    /**
-     * ZlibHexTileImpl.write() has:
-     * {@code byte[] data = zlibRawData != null ? zlibRawData : new byte[0]}.
-     * The null branch is covered when SUBENC_ZLIB_RAW is set but zlibRawData is null.
-     */
-    @Test
-    void testZlibHexTile_zlibRaw_nullData_write() throws IOException {
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
-                .zlibRawData(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        // subenc byte + 2-byte length (0) = 3 bytes
-        assertEquals(3, baos.size());
     }
 
     // -----------------------------------------------------------------------
@@ -499,47 +388,6 @@ class FinalGapsTest {
     }
 
     // -----------------------------------------------------------------------
-    // GiiServerVersion.read with bigEndian=false
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testGiiServerVersion_read_littleEndian() throws IOException {
-        GiiServerVersion orig = GiiServerVersion.newBuilder()
-                .bigEndian(false).maximumVersion(2).minimumVersion(1).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        byte[] bytes = baos.toByteArray();
-        // read() starts after message-type byte (byte[0])
-        GiiServerVersion copy = GiiServerVersion.read(
-                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
-        assertFalse(copy.bigEndian());
-        assertEquals(2, copy.maximumVersion());
-        assertEquals(1, copy.minimumVersion());
-    }
-
-    // -----------------------------------------------------------------------
-    // GiiDeviceCreation round-trip with bigEndian=false
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testGiiDeviceCreation_readRoundTrip_littleEndian() throws IOException {
-        GiiDeviceCreation orig = GiiDeviceCreation.newBuilder()
-                .bigEndian(false).deviceName("TestLE")
-                .vendorId(1L).productId(2L).canGenerate(3L)
-                .numRegisters(0L).numButtons(1L)
-                .valuators(List.of()).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        byte[] bytes = baos.toByteArray();
-        // read() starts after message-type byte (byte[0])
-        GiiDeviceCreation copy = GiiDeviceCreation.read(
-                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
-        assertFalse(copy.bigEndian());
-        assertEquals("TestLE", copy.deviceName());
-        assertEquals(1L, copy.vendorId());
-    }
-
-    // -----------------------------------------------------------------------
     // RfbRectangleDispatch: default case (unknown encoding type)
     // -----------------------------------------------------------------------
 
@@ -561,30 +409,6 @@ class FinalGapsTest {
 
         assertThrows(UnsupportedOperationException.class,
                 () -> RfbRectangle.read(new ByteArrayInputStream(bytes), PF_32BPP));
-    }
-
-    // -----------------------------------------------------------------------
-    // ZlibHexTile SUBENC_ZLIB_RAW with non-null zlibRawData in write()
-    // -----------------------------------------------------------------------
-
-    /**
-     * The write() method's ternary {@code zlibRawData != null ? zlibRawData : new byte[0]}
-     * needs both branches covered. The null branch is covered by testZlibHexTile_zlibRaw_nullData_write;
-     * this test covers the non-null branch explicitly via write().
-     */
-    @Test
-    void testZlibHexTile_zlibRaw_nonNullData_write() throws IOException {
-        byte[] rawData = {0x78, (byte) 0x9C, 0x03, 0x00, 0x00, 0x00, 0x00, 0x01};
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
-                .zlibRawData(rawData)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        msg.write(baos);
-        byte[] bytes = baos.toByteArray();
-        // subenc(1) + length(2) + data(8) = 11 bytes
-        assertEquals(11, bytes.length);
-        assertEquals((byte) ZlibHexTile.SUBENC_ZLIB_RAW, bytes[0]);
     }
 
     // -----------------------------------------------------------------------
