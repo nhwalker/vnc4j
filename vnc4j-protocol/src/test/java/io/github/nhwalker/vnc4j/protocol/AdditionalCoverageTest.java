@@ -21,7 +21,6 @@ import static org.junit.jupiter.api.Assertions.*;
  * - VncSocketClient: SecurityResult failure path
  * - VncSocketServer: wrong security type selection path
  * - RfbRectangleDispatch: unknown TightPng ctrl byte
- * - ZlibHexTileImpl: null rawPixels when SUBENC_RAW, null subrects when SUBENC_ANY_SUBRECTS
  * - Various impl null branches and from() methods
  */
 class AdditionalCoverageTest {
@@ -220,44 +219,6 @@ class AdditionalCoverageTest {
     }
 
     // -----------------------------------------------------------------------
-    // ZlibHexTile null rawPixels when SUBENC_RAW set
-    // -----------------------------------------------------------------------
-
-    /**
-     * ZlibHexTileImpl.write() has a null guard for rawPixels:
-     * {@code if (rawPixels != null) dos.write(rawPixels)}.
-     * When rawPixels is null and SUBENC_RAW is set (but SUBENC_ZLIB_RAW is not),
-     * the write should complete with only the subencoding byte.
-     */
-    @Test
-    void testZlibHexTile_rawSubenc_nullPixels() throws IOException {
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_RAW)
-                .rawPixels(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        assertEquals(1, baos.size()); // only the subencoding byte
-    }
-
-    /**
-     * ZlibHexTile null subrects when SUBENC_ANY_SUBRECTS is set (no SUBENC_ZLIB):
-     * the null guard {@code subrects != null ? subrects : List.of()} should yield
-     * an empty list → writes count byte = 0.
-     */
-    @Test
-    void testZlibHexTile_nullSubrects_anySubrectsFlag() throws IOException {
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ANY_SUBRECTS)
-                .subrects(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        // subenc byte + count byte (0)
-        assertEquals(2, baos.size());
-    }
-
-    // -----------------------------------------------------------------------
     // RfbRectangleZlib / Zrle: from() builder method
     // -----------------------------------------------------------------------
 
@@ -324,25 +285,6 @@ class AdditionalCoverageTest {
         assertEquals(subenc, copy.subencoding());
         assertEquals(1, copy.subrects().size());
         assertArrayEquals(new byte[]{0x77}, copy.subrects().get(0).pixel());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_ZLIB (64) | SUBENC_ANY_SUBRECTS (8) and non-null data:
-     * exercises the SUBENC_ZLIB branch with actual data.
-     */
-    @Test
-    void testZlibHexTile_zlibSubrects_withData() throws IOException {
-        byte[] zlibData = new byte[]{0x01, 0x02, 0x03};
-        ZlibHexTile orig = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ANY_SUBRECTS | ZlibHexTile.SUBENC_ZLIB)
-                .zlibSubrectData(zlibData)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        ZlibHexTile copy = ZlibHexTile.read(
-                new ByteArrayInputStream(baos.toByteArray()), 8, 8, 1);
-        assertEquals(ZlibHexTile.SUBENC_ANY_SUBRECTS | ZlibHexTile.SUBENC_ZLIB, copy.subencoding());
-        assertArrayEquals(zlibData, copy.zlibSubrectData());
     }
 
     // -----------------------------------------------------------------------

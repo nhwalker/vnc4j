@@ -4,7 +4,7 @@ package io.github.nhwalker.vnc4j.protocol;
 public sealed interface ClientMessage extends RfbMessage
         permits SetPixelFormat, SetEncodings, FramebufferUpdateRequest, KeyEvent,
                 PointerEvent, ClientCutText, EnableContinuousUpdates, ClientFence,
-                XvpClientMessage, SetDesktopSize, GiiClientMessage, QemuClientMessage {
+                XvpClientMessage, SetDesktopSize {
 
     void write(java.io.OutputStream out) throws java.io.IOException;
 }
