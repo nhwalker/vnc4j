@@ -33,16 +33,16 @@ public final class RfbRectangleCursorRender implements RfbRectangleRender<RfbRec
         int bpp = PixelDecoder.bytesPerPixel(pixelFormat);
         int maskRowBytes = (w + 7) / 8;
 
+        int[] argb = new int[w * h];
         for (int dy = 0; dy < h; dy++) {
             for (int dx = 0; dx < w; dx++) {
                 int maskByte = bitmask[dy * maskRowBytes + dx / 8] & 0xFF;
                 boolean visible = (maskByte & (0x80 >> (dx % 8))) != 0;
-
-                int argb = visible
+                argb[dy * w + dx] = visible
                         ? PixelDecoder.decodePixel(pixels, (dy * w + dx) * bpp, pixelFormat)
                         : 0x00000000;
-                image.setRGB(dx, dy, argb);
             }
         }
+        image.setRGB(0, 0, w, h, argb, 0, w);
     }
 }

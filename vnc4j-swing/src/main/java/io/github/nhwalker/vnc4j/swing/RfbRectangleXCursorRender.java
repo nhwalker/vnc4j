@@ -35,6 +35,7 @@ public final class RfbRectangleXCursorRender implements RfbRectangleRender<RfbRe
         byte[] bitmask = rectangle.bitmask();
         int rowBytes = (w + 7) / 8;
 
+        int[] argb = new int[w * h];
         for (int dy = 0; dy < h; dy++) {
             for (int dx = 0; dx < w; dx++) {
                 int byteIdx = dy * rowBytes + dx / 8;
@@ -43,9 +44,10 @@ public final class RfbRectangleXCursorRender implements RfbRectangleRender<RfbRe
                 boolean visible = (bitmask[byteIdx] & bitMask) != 0;
                 boolean isFg    = (bitmap[byteIdx]  & bitMask) != 0;
 
-                image.setRGB(dx, dy, visible ? (isFg ? primaryArgb : secondaryArgb) : 0x00000000);
+                argb[dy * w + dx] = visible ? (isFg ? primaryArgb : secondaryArgb) : 0x00000000;
             }
         }
+        image.setRGB(0, 0, w, h, argb, 0, w);
     }
 
     private static int clamp(int v) {

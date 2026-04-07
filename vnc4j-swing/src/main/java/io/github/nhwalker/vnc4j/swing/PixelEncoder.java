@@ -24,12 +24,10 @@ final class PixelEncoder {
     static byte[] encodeRegion(BufferedImage img, int x, int y, int w, int h, PixelFormat fmt) {
         int bpp = fmt.bitsPerPixel() / 8;
         byte[] out = new byte[w * h * bpp];
-        int offset = 0;
-        for (int row = y; row < y + h; row++) {
-            for (int col = x; col < x + w; col++) {
-                encodePixelInto(img.getRGB(col, row), fmt, bpp, out, offset);
-                offset += bpp;
-            }
+        // Fetch all pixels in one bulk call to avoid per-pixel JNI/bounds-check overhead.
+        int[] pixels = img.getRGB(x, y, w, h, null, 0, w);
+        for (int i = 0; i < pixels.length; i++) {
+            encodePixelInto(pixels[i], fmt, bpp, out, i * bpp);
         }
         return out;
     }
