@@ -79,15 +79,13 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender<RfbRecta
 
     private void renderRaw(BufferedImage image, DataInputStream in,
             int tileX, int tileY, int tileW, int tileH, int cpxSize) throws IOException {
-        byte[] buf = new byte[cpxSize];
-        int[] argb = new int[tileW];
-        for (int dy = 0; dy < tileH; dy++) {
-            for (int dx = 0; dx < tileW; dx++) {
-                in.readFully(buf);
-                argb[dx] = PixelDecoder.decodeCPixel(buf, 0, pixelFormat);
-            }
-            image.setRGB(tileX, tileY + dy, tileW, 1, argb, 0, tileW);
+        byte[] buf = new byte[cpxSize * tileW * tileH];
+        in.readFully(buf);
+        int[] argb = new int[tileW * tileH];
+        for (int i = 0; i < argb.length; i++) {
+            argb[i] = PixelDecoder.decodeCPixel(buf, i * cpxSize, pixelFormat);
         }
+        image.setRGB(tileX, tileY, tileW, tileH, argb, 0, tileW);
     }
 
     private void renderSolid(BufferedImage image, DataInputStream in,
@@ -105,7 +103,8 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender<RfbRecta
         int bitsPerIdx = bitsForPaletteSize(paletteSize);
         int mask = (1 << bitsPerIdx) - 1;
 
-        int[] argb = new int[tileW];
+        int[] argb = new int[tileW * tileH];
+        int pixIdx = 0;
         for (int dy = 0; dy < tileH; dy++) {
             // Per the spec, each row is padded to a whole number of bytes, so the
             // bit accumulator must be reset at the start of every row.
@@ -118,10 +117,10 @@ public final class RfbRectangleZrleRender implements RfbRectangleRender<RfbRecta
                 }
                 bitsLeft -= bitsPerIdx;
                 int idx = (accum >> bitsLeft) & mask;
-                argb[dx] = (idx < palette.length) ? palette[idx] : 0xFF000000;
+                argb[pixIdx++] = (idx < palette.length) ? palette[idx] : 0xFF000000;
             }
-            image.setRGB(tileX, tileY + dy, tileW, 1, argb, 0, tileW);
         }
+        image.setRGB(tileX, tileY, tileW, tileH, argb, 0, tileW);
     }
 
     private void renderPlainRle(BufferedImage image, DataInputStream in,

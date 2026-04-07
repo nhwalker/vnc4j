@@ -2,6 +2,7 @@ package io.github.nhwalker.vnc4j.swing;
 
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleCopyRect;
 
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 /**
@@ -20,8 +21,14 @@ public final class RfbRectangleCopyRectRender implements RfbRectangleRender<RfbR
         int h = rectangle.height();
         if (w <= 0 || h <= 0) return;
 
-        // Capture source region first to handle overlapping copies correctly.
-        int[] srcPixels = image.getRGB(rectangle.srcX(), rectangle.srcY(), w, h, null, 0, w);
-        image.setRGB(rectangle.x(), rectangle.y(), w, h, srcPixels, 0, w);
+        // copyArea handles overlapping regions correctly and avoids allocating a
+        // temporary pixel buffer; it is also eligible for hardware acceleration.
+        Graphics2D g = image.createGraphics();
+        try {
+            g.copyArea(rectangle.srcX(), rectangle.srcY(), w, h,
+                    rectangle.x() - rectangle.srcX(), rectangle.y() - rectangle.srcY());
+        } finally {
+            g.dispose();
+        }
     }
 }

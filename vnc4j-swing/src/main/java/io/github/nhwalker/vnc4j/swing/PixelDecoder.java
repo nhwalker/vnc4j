@@ -2,6 +2,8 @@ package io.github.nhwalker.vnc4j.swing;
 
 import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.zip.DataFormatException;
@@ -102,10 +104,12 @@ final class PixelDecoder {
     /** Fills a rectangular region of an image with a solid ARGB colour. */
     static void fillRect(BufferedImage image, int x, int y, int w, int h, int argb) {
         if (w <= 0 || h <= 0) return;
-        int[] row = new int[w];
-        java.util.Arrays.fill(row, argb);
-        for (int dy = 0; dy < h; dy++) {
-            image.setRGB(x, y + dy, w, 1, row, 0, w);
+        Graphics2D g = image.createGraphics();
+        try {
+            g.setColor(new Color(argb, true));
+            g.fillRect(x, y, w, h);
+        } finally {
+            g.dispose();
         }
     }
 
@@ -117,13 +121,11 @@ final class PixelDecoder {
     static void drawRawPixels(BufferedImage image, int x, int y, int w, int h,
             byte[] pixels, int dataOffset, PixelFormat fmt) {
         int bpp = bytesPerPixel(fmt);
-        int[] argb = new int[w];
-        for (int dy = 0; dy < h; dy++) {
-            for (int dx = 0; dx < w; dx++) {
-                argb[dx] = decodePixel(pixels, dataOffset + (dy * w + dx) * bpp, fmt);
-            }
-            image.setRGB(x, y + dy, w, 1, argb, 0, w);
+        int[] argb = new int[w * h];
+        for (int i = 0; i < argb.length; i++) {
+            argb[i] = decodePixel(pixels, dataOffset + i * bpp, fmt);
         }
+        image.setRGB(x, y, w, h, argb, 0, w);
     }
 
     /**
