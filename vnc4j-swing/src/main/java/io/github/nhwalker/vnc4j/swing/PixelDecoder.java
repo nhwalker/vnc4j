@@ -2,6 +2,8 @@ package io.github.nhwalker.vnc4j.swing;
 
 import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 
+import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.util.zip.DataFormatException;
@@ -102,9 +104,13 @@ final class PixelDecoder {
     /** Fills a rectangular region of an image with a solid ARGB colour. */
     static void fillRect(BufferedImage image, int x, int y, int w, int h, int argb) {
         if (w <= 0 || h <= 0) return;
-        int[] pixels = new int[w * h];
-        java.util.Arrays.fill(pixels, argb);
-        image.setRGB(x, y, w, h, pixels, 0, w);
+        Graphics2D g = image.createGraphics();
+        try {
+            g.setColor(new Color(argb, true));
+            g.fillRect(x, y, w, h);
+        } finally {
+            g.dispose();
+        }
     }
 
     /**
