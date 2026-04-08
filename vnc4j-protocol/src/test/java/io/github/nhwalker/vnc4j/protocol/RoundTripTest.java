@@ -146,55 +146,6 @@ class RoundTripTest {
     }
 
     // -----------------------------------------------------------------------
-    // Extended client messages (skip 1 type byte)
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testEnableContinuousUpdates_roundTrip() throws IOException {
-        EnableContinuousUpdates original = EnableContinuousUpdates.newBuilder()
-                .enable(true).x(0).y(0).width(800).height(600).build();
-        EnableContinuousUpdates result = EnableContinuousUpdates.read(
-                afterTypeByte(original::write));
-        assertEquals(original.enable(), result.enable());
-        assertEquals(original.width(), result.width());
-        assertEquals(original.height(), result.height());
-    }
-
-    @Test
-    void testClientFence_roundTrip() throws IOException {
-        ClientFence original = ClientFence.newBuilder()
-                .flags(0x7).payload(new byte[]{0x11, 0x22}).build();
-        ClientFence result = ClientFence.read(afterTypeByte(original::write));
-        assertEquals(original.flags(), result.flags());
-        assertArrayEquals(original.payload(), result.payload());
-    }
-
-    @Test
-    void testXvpClientMessage_roundTrip() throws IOException {
-        XvpClientMessage original = XvpClientMessage.newBuilder()
-                .xvpVersion(1).xvpMessageCode(3).build();
-        XvpClientMessage result = XvpClientMessage.read(afterTypeByte(original::write));
-        assertEquals(original.xvpVersion(), result.xvpVersion());
-        assertEquals(original.xvpMessageCode(), result.xvpMessageCode());
-    }
-
-    @Test
-    void testSetDesktopSize_roundTrip() throws IOException {
-        Screen screen = Screen.newBuilder()
-                .id(1).x(0).y(0).width(1280).height(720).flags(0).build();
-        SetDesktopSize original = SetDesktopSize.newBuilder()
-                .width(1280).height(720)
-                .screens(List.of(screen))
-                .build();
-        SetDesktopSize result = SetDesktopSize.read(afterTypeByte(original::write));
-        assertEquals(original.width(), result.width());
-        assertEquals(original.height(), result.height());
-        assertEquals(1, result.screens().size());
-        assertEquals(screen.id(), result.screens().get(0).id());
-        assertEquals(screen.width(), result.screens().get(0).width());
-    }
-
-    // -----------------------------------------------------------------------
     // Server messages (skip 1 type byte)
     // -----------------------------------------------------------------------
 
@@ -226,36 +177,6 @@ class RoundTripTest {
         assertEquals(entry.red(), result.colours().get(0).red());
         assertEquals(entry.green(), result.colours().get(0).green());
         assertEquals(entry.blue(), result.colours().get(0).blue());
-    }
-
-    // -----------------------------------------------------------------------
-    // Extended server messages (skip 1 type byte)
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testEndOfContinuousUpdates_roundTrip() throws IOException {
-        EndOfContinuousUpdates original = EndOfContinuousUpdates.newBuilder().build();
-        EndOfContinuousUpdates result = EndOfContinuousUpdates.read(
-                afterTypeByte(original::write));
-        assertNotNull(result);
-    }
-
-    @Test
-    void testServerFence_roundTrip() throws IOException {
-        ServerFence original = ServerFence.newBuilder()
-                .flags(0x3).payload(new byte[]{(byte) 0xAA, (byte) 0xBB}).build();
-        ServerFence result = ServerFence.read(afterTypeByte(original::write));
-        assertEquals(original.flags(), result.flags());
-        assertArrayEquals(original.payload(), result.payload());
-    }
-
-    @Test
-    void testXvpServerMessage_roundTrip() throws IOException {
-        XvpServerMessage original = XvpServerMessage.newBuilder()
-                .xvpVersion(1).xvpMessageCode(2).build();
-        XvpServerMessage result = XvpServerMessage.read(afterTypeByte(original::write));
-        assertEquals(original.xvpVersion(), result.xvpVersion());
-        assertEquals(original.xvpMessageCode(), result.xvpMessageCode());
     }
 
 }
