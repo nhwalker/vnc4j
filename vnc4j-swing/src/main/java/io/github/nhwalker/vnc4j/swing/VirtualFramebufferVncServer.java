@@ -1,6 +1,7 @@
 package io.github.nhwalker.vnc4j.swing;
 
 import io.github.nhwalker.vnc4j.protocol.*;
+import io.github.nhwalker.vnc4j.protocol.messages.*;
 
 import java.awt.Rectangle;
 import java.io.IOException;

@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.SecurityTypeSelection;
+import io.github.nhwalker.vnc4j.protocol.messages.SecurityTypeSelection;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

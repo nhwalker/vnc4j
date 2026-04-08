@@ -1,7 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleCopyRect;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleCopyRect;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

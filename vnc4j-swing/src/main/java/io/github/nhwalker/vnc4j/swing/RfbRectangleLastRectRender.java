@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleLastRect;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleLastRect;
 
 import java.awt.image.BufferedImage;
 

@@ -1,8 +1,8 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleRre;
-import io.github.nhwalker.vnc4j.protocol.RreSubrect;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleRre;
+import io.github.nhwalker.vnc4j.protocol.messages.RreSubrect;
 
 import java.awt.image.BufferedImage;
 

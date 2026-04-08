@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleDesktopSize;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleDesktopSize;
 
 import java.awt.image.BufferedImage;
 

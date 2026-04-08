@@ -1,5 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol;
 
+import io.github.nhwalker.vnc4j.protocol.messages.*;
+
 /**
  * Client-side application interface for a single VNC server connection.
  *

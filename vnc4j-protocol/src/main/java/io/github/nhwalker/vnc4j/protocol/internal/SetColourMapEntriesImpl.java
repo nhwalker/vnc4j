@@ -1,7 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.ColourMapEntry;
-import io.github.nhwalker.vnc4j.protocol.SetColourMapEntries;
+import io.github.nhwalker.vnc4j.protocol.messages.ColourMapEntry;
+import io.github.nhwalker.vnc4j.protocol.messages.SetColourMapEntries;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

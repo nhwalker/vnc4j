@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.EnableContinuousUpdates;
+import io.github.nhwalker.vnc4j.protocol.messages.EnableContinuousUpdates;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

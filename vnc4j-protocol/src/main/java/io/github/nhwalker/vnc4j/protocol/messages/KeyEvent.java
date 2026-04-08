@@ -1,0 +1,30 @@
+package io.github.nhwalker.vnc4j.protocol.messages;
+
+import io.github.nhwalker.vnc4j.protocol.internal.KeyEventImpl;
+
+/** Client keyboard press or release event carrying an X11 keysym. */
+public non-sealed interface KeyEvent extends ClientMessage {
+    static Builder newBuilder() {
+        return new KeyEventImpl.BuilderImpl();
+    }
+
+    boolean down();
+    int key();
+
+    interface Builder {
+        Builder down(boolean down);
+        Builder key(int key);
+
+        KeyEvent build();
+
+        default Builder from(KeyEvent msg) {
+            return down(msg.down()).key(msg.key());
+        }
+    }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static KeyEvent read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.KeyEventImpl.read(in);
+    }
+}

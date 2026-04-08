@@ -1,29 +1,29 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdate;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdateRequest;
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.PointerEvent;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangle;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleCopyRect;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleCursor;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleDesktopSize;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleExtendedDesktopSize;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleHextile;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleJpeg;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleLastRect;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleRaw;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleRre;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightBasic;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightFill;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightJpeg;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngFill;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngJpeg;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngPng;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleZlib;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleZrle;
-import io.github.nhwalker.vnc4j.protocol.ServerInit;
-import io.github.nhwalker.vnc4j.protocol.SetEncodings;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdate;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdateRequest;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.PointerEvent;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangle;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleCopyRect;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleCursor;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleDesktopSize;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleExtendedDesktopSize;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleHextile;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleJpeg;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleLastRect;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleRaw;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleRre;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightBasic;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightFill;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightJpeg;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightPngFill;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightPngJpeg;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightPngPng;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleZlib;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleZrle;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerInit;
+import io.github.nhwalker.vnc4j.protocol.messages.SetEncodings;
 import io.github.nhwalker.vnc4j.protocol.VncClient;
 import io.github.nhwalker.vnc4j.protocol.VncClientFactory;
 import io.github.nhwalker.vnc4j.protocol.VncSocketClientHandle;
@@ -243,7 +243,7 @@ public class VncPanel extends JPanel implements VncClientFactory {
         VncSocketClientHandle h = activeHandle;
         if (h == null) return;
         try {
-            h.send(io.github.nhwalker.vnc4j.protocol.KeyEvent.newBuilder()
+            h.send(io.github.nhwalker.vnc4j.protocol.messages.KeyEvent.newBuilder()
                     .down(down)
                     .key(keysym)
                     .build());

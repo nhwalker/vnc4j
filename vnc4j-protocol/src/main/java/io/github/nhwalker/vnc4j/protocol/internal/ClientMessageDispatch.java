@@ -1,12 +1,12 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.ClientCutText;
-import io.github.nhwalker.vnc4j.protocol.ClientMessage;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdateRequest;
-import io.github.nhwalker.vnc4j.protocol.KeyEvent;
-import io.github.nhwalker.vnc4j.protocol.PointerEvent;
-import io.github.nhwalker.vnc4j.protocol.SetEncodings;
-import io.github.nhwalker.vnc4j.protocol.SetPixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.ClientCutText;
+import io.github.nhwalker.vnc4j.protocol.messages.ClientMessage;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdateRequest;
+import io.github.nhwalker.vnc4j.protocol.messages.KeyEvent;
+import io.github.nhwalker.vnc4j.protocol.messages.PointerEvent;
+import io.github.nhwalker.vnc4j.protocol.messages.SetEncodings;
+import io.github.nhwalker.vnc4j.protocol.messages.SetPixelFormat;
 
 import java.io.IOException;
 import java.io.InputStream;

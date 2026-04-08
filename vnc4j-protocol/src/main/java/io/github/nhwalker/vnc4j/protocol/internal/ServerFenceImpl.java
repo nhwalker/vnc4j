@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.ServerFence;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerFence;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
