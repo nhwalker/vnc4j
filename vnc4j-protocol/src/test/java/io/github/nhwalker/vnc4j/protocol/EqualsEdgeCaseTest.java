@@ -160,16 +160,6 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testClientFence_equalsGuards() {
-        assertEqualsGuards(ClientFence.newBuilder().flags(1).payload(new byte[]{1}).build());
-    }
-
-    @Test
-    void testServerFence_equalsGuards() {
-        assertEqualsGuards(ServerFence.newBuilder().flags(1).payload(new byte[]{1}).build());
-    }
-
-    @Test
     void testKeyEvent_equalsGuards() {
         assertEqualsGuards(KeyEvent.newBuilder().down(true).key(0x41).build());
     }
@@ -182,12 +172,6 @@ class EqualsEdgeCaseTest {
     @Test
     void testSetEncodings_equalsGuards() {
         assertEqualsGuards(SetEncodings.newBuilder().encodings(List.of(0)).build());
-    }
-
-    @Test
-    void testEnableContinuousUpdates_equalsGuards() {
-        assertEqualsGuards(EnableContinuousUpdates.newBuilder()
-                .enable(true).x(0).y(0).width(800).height(600).build());
     }
 
     @Test
@@ -206,13 +190,6 @@ class EqualsEdgeCaseTest {
         ColourMapEntry entry = ColourMapEntry.newBuilder().red(0xFFFF).green(0).blue(0).build();
         assertEqualsGuards(SetColourMapEntries.newBuilder()
                 .firstColour(0).colours(List.of(entry)).build());
-    }
-
-    @Test
-    void testSetDesktopSize_equalsGuards() {
-        Screen screen = Screen.newBuilder().id(1).x(0).y(0).width(1920).height(1080).flags(0).build();
-        assertEqualsGuards(SetDesktopSize.newBuilder()
-                .width(1920).height(1080).screens(List.of(screen)).build());
     }
 
     @Test

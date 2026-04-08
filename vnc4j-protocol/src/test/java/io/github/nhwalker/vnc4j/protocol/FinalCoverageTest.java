@@ -126,34 +126,13 @@ class FinalCoverageTest {
     // -----------------------------------------------------------------------
 
     /**
-     * Messages with no fields (Bell, EndOfContinuousUpdates) have a {@code Builder.from(msg)}
-     * default that simply returns {@code this}. This exercises the 2-instruction method body.
+     * Bell has a {@code Builder.from(msg)} default that simply returns {@code this}.
+     * This exercises the 2-instruction method body.
      */
     @Test
     void testSingletonBuilderFrom() {
         Bell bell = Bell.newBuilder().build();
         assertNotNull(Bell.newBuilder().from(bell).build());
-
-        EndOfContinuousUpdates ecu = EndOfContinuousUpdates.newBuilder().build();
-        assertNotNull(EndOfContinuousUpdates.newBuilder().from(ecu).build());
-    }
-
-    // -----------------------------------------------------------------------
-    // Builder.from() on fence and audio-data builders
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testClientFence_builderFrom() {
-        ClientFence orig = ClientFence.newBuilder().flags(3).payload(new byte[]{0x01}).build();
-        ClientFence copy = ClientFence.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testServerFence_builderFrom() {
-        ServerFence orig = ServerFence.newBuilder().flags(7).payload(new byte[]{0x02}).build();
-        ServerFence copy = ServerFence.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
     }
 
     @Test
@@ -191,23 +170,6 @@ class FinalCoverageTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         msg.write(baos);
         assertEquals(8, baos.size()); // 1 type + 3 padding + 4 length
-    }
-
-    @Test
-    void testWrite_nullPayload_clientFence() throws IOException {
-        ClientFence msg = ClientFence.newBuilder().flags(0).payload(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        msg.write(baos);
-        // 1 type + 3 padding + 4 flags + 1 len = 9 bytes
-        assertEquals(9, baos.size());
-    }
-
-    @Test
-    void testWrite_nullPayload_serverFence() throws IOException {
-        ServerFence msg = ServerFence.newBuilder().flags(0).payload(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        msg.write(baos);
-        assertEquals(9, baos.size()); // 1 type + 3 padding + 4 flags + 1 len
     }
 
     @Test

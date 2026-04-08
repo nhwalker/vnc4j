@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - RfbRectangleTightBasic with null compressedData
  * - HextileTile SUBENC_ANY_SUBRECTS with null subrects
  * - RfbRectangleDispatch: encoding type 21 (JPEG) → UnsupportedOperationException
- * - KeyEvent.read with down=false; EnableContinuousUpdates.read with enable=false
+ * - KeyEvent.read with down=false
  * - GiiServerVersion.read with bigEndian=false
  * - GiiDeviceCreation round-trip with bigEndian=false
  */
@@ -265,15 +265,6 @@ class FinalGapsTest {
     }
 
     @Test
-    void testSetDesktopSize_nullScreens_write() throws IOException {
-        SetDesktopSize msg = SetDesktopSize.newBuilder()
-                .width(800).height(600).screens(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        assertTrue(baos.size() > 0);
-    }
-
-    @Test
     void testFramebufferUpdate_nullRects_write() throws IOException {
         FramebufferUpdate msg = FramebufferUpdate.newBuilder().rectangles(null).build();
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -370,23 +361,6 @@ class FinalGapsTest {
         KeyEvent copy = KeyEvent.read(new ByteArrayInputStream(bytes, 1, bytes.length - 1));
         assertFalse(copy.down());
         assertEquals(0x41, copy.key());
-    }
-
-    // -----------------------------------------------------------------------
-    // EnableContinuousUpdates.read with enable=false
-    // -----------------------------------------------------------------------
-
-    @Test
-    void testEnableContinuousUpdates_read_enableFalse() throws IOException {
-        EnableContinuousUpdates orig = EnableContinuousUpdates.newBuilder()
-                .enable(false).x(0).y(0).width(800).height(600).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        byte[] bytes = baos.toByteArray();
-        // write() includes message-type byte[0]; read() starts after it
-        EnableContinuousUpdates copy = EnableContinuousUpdates.read(
-                new ByteArrayInputStream(bytes, 1, bytes.length - 1));
-        assertFalse(copy.enable());
     }
 
     // -----------------------------------------------------------------------

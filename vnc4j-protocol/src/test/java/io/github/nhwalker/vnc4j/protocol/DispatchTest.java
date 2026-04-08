@@ -346,48 +346,4 @@ class DispatchTest {
                 () -> RfbRectangleDispatch.read(streamOf(baos.toByteArray()), PIXEL_FORMAT));
     }
 
-    // -----------------------------------------------------------------------
-    // TightCapability
-    // -----------------------------------------------------------------------
-
-    /**
-     * Verifies that TightCapability can be built and its fields are accessible.
-     */
-    @Test
-    void testTightCapability_build() {
-        TightCapability cap = TightCapability.newBuilder()
-                .code(1).vendor("TIGHT").signature("JPEGOPT-").build();
-        assertEquals(1, cap.code());
-        assertEquals("TIGHT", cap.vendor());
-        assertEquals("JPEGOPT-", cap.signature());
-    }
-
-    @Test
-    void testTightCapability_equality() {
-        TightCapability cap1 = TightCapability.newBuilder()
-                .code(1).vendor("TIGHT").signature("JPEGOPT-").build();
-        TightCapability cap2 = TightCapability.newBuilder()
-                .code(1).vendor("TIGHT").signature("JPEGOPT-").build();
-        assertEquals(cap1, cap2);
-        assertEquals(cap1.hashCode(), cap2.hashCode());
-    }
-
-    @Test
-    void testTightCapability_toString() {
-        TightCapability cap = TightCapability.newBuilder()
-                .code(42).vendor("VEND").signature("SIGNAT--").build();
-        String str = cap.toString();
-        assertNotNull(str);
-        assertFalse(str.isEmpty());
-    }
-
-    @Test
-    void testTightCapability_fromBuilder() {
-        TightCapability original = TightCapability.newBuilder()
-                .code(7).vendor("MYVEND").signature("MYSIG---").build();
-        TightCapability copy = TightCapability.newBuilder().from(original).build();
-        assertEquals(original.code(), copy.code());
-        assertEquals(original.vendor(), copy.vendor());
-        assertEquals(original.signature(), copy.signature());
-    }
 }

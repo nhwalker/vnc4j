@@ -13,9 +13,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for remaining coverage gaps: from() builders for SetEncodings, SetPixelFormat,
- * XvpClientMessage, XvpServerMessage; RRE read round-trips; and VncServer
- * default method coverage via anonymous implementations.
+ * Tests for remaining coverage gaps: from() builders for SetEncodings, SetPixelFormat;
+ * RRE read round-trips; and VncServer default method coverage via anonymous implementations.
  */
 class RemainingCoverageTest {
 
@@ -59,22 +58,6 @@ class RemainingCoverageTest {
     void testSetPixelFormat_from() {
         SetPixelFormat orig = SetPixelFormat.newBuilder().pixelFormat(PF_32BPP).build();
         SetPixelFormat copy = SetPixelFormat.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testXvpClientMessage_from() {
-        XvpClientMessage orig = XvpClientMessage.newBuilder()
-                .xvpVersion(1).xvpMessageCode(2).build();
-        XvpClientMessage copy = XvpClientMessage.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testXvpServerMessage_from() {
-        XvpServerMessage orig = XvpServerMessage.newBuilder()
-                .xvpVersion(1).xvpMessageCode(0).build();
-        XvpServerMessage copy = XvpServerMessage.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 

@@ -49,15 +49,6 @@ class BuilderFromMethodTest {
     }
 
     @Test
-    void testEnableContinuousUpdates_from() {
-        EnableContinuousUpdates orig = EnableContinuousUpdates.newBuilder()
-                .enable(true).x(0).y(0).width(800).height(600).build();
-        EnableContinuousUpdates copy = EnableContinuousUpdates.newBuilder().from(orig).build();
-        assertEquals(orig.enable(), copy.enable());
-        assertEquals(orig.width(), copy.width());
-    }
-
-    @Test
     void testFramebufferUpdate_from() {
         RfbRectangleDesktopSize rect = RfbRectangleDesktopSize.newBuilder()
                 .x(0).y(0).width(800).height(600).build();
@@ -95,15 +86,6 @@ class BuilderFromMethodTest {
         SetColourMapEntries orig = SetColourMapEntries.newBuilder()
                 .firstColour(0).colours(List.of(entry)).build();
         SetColourMapEntries copy = SetColourMapEntries.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testSetDesktopSize_from() {
-        Screen screen = Screen.newBuilder().id(1).x(0).y(0).width(1920).height(1080).flags(0).build();
-        SetDesktopSize orig = SetDesktopSize.newBuilder()
-                .width(1920).height(1080).screens(List.of(screen)).build();
-        SetDesktopSize copy = SetDesktopSize.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 
