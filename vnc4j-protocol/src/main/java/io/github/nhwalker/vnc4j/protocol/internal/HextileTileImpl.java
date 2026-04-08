@@ -1,7 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.HextileSubrect;
-import io.github.nhwalker.vnc4j.protocol.HextileTile;
+import io.github.nhwalker.vnc4j.protocol.messages.HextileSubrect;
+import io.github.nhwalker.vnc4j.protocol.messages.HextileTile;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

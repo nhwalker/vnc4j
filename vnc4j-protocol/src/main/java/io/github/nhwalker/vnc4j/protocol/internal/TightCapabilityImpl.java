@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.TightCapability;
+import io.github.nhwalker.vnc4j.protocol.messages.TightCapability;
 
 public record TightCapabilityImpl(int code, String vendor, String signature) implements TightCapability {
 

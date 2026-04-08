@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
 import org.junit.jupiter.api.Test;
 
 import java.awt.image.BufferedImage;

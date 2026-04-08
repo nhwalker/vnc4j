@@ -1,7 +1,7 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.SetPixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.SetPixelFormat;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

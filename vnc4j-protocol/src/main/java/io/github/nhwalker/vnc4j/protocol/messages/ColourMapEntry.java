@@ -1,0 +1,32 @@
+package io.github.nhwalker.vnc4j.protocol.messages;
+
+import io.github.nhwalker.vnc4j.protocol.internal.ColourMapEntryImpl;
+
+/** A single RGB entry in a colour map (palette). */
+public interface ColourMapEntry {
+    static Builder newBuilder() {
+        return new ColourMapEntryImpl.BuilderImpl();
+    }
+
+    int red();
+    int green();
+    int blue();
+
+    interface Builder {
+        Builder red(int red);
+        Builder green(int green);
+        Builder blue(int blue);
+
+        ColourMapEntry build();
+
+        default Builder from(ColourMapEntry msg) {
+            return red(msg.red()).green(msg.green()).blue(msg.blue());
+        }
+    }
+
+    void write(java.io.OutputStream out) throws java.io.IOException;
+
+    static ColourMapEntry read(java.io.InputStream in) throws java.io.IOException {
+        return io.github.nhwalker.vnc4j.protocol.internal.ColourMapEntryImpl.read(in);
+    }
+}

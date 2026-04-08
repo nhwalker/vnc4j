@@ -1,9 +1,9 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.HextileSubrect;
-import io.github.nhwalker.vnc4j.protocol.HextileTile;
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleHextile;
+import io.github.nhwalker.vnc4j.protocol.messages.HextileSubrect;
+import io.github.nhwalker.vnc4j.protocol.messages.HextileTile;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleHextile;
 
 import java.awt.image.BufferedImage;
 import java.util.List;

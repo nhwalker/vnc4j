@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.swing;
 
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleJpeg;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleJpeg;
 
 import javax.imageio.ImageIO;
 import java.awt.Graphics2D;

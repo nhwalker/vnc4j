@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdateRequest;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdateRequest;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;

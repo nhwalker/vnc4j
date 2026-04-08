@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleJpeg;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleJpeg;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Arrays;

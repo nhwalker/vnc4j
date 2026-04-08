@@ -1,9 +1,9 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangle;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTight;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPng;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangle;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTight;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleTightPng;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;

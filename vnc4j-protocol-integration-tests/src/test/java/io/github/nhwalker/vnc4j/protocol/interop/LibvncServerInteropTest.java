@@ -1,10 +1,10 @@
 package io.github.nhwalker.vnc4j.protocol.interop;
 
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdate;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdateRequest;
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangle;
-import io.github.nhwalker.vnc4j.protocol.ServerInit;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdate;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdateRequest;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangle;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerInit;
 import io.github.nhwalker.vnc4j.protocol.VncClient;
 import io.github.nhwalker.vnc4j.protocol.VncSocketClient;
 import org.junit.jupiter.api.Test;

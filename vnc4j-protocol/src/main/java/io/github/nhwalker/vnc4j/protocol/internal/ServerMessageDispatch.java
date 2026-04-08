@@ -1,11 +1,11 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.Bell;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdate;
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.ServerCutText;
-import io.github.nhwalker.vnc4j.protocol.ServerMessage;
-import io.github.nhwalker.vnc4j.protocol.SetColourMapEntries;
+import io.github.nhwalker.vnc4j.protocol.messages.Bell;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdate;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerCutText;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerMessage;
+import io.github.nhwalker.vnc4j.protocol.messages.SetColourMapEntries;
 
 import java.io.EOFException;
 import java.io.IOException;

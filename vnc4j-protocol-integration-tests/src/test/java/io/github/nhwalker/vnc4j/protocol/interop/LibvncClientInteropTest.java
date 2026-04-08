@@ -1,12 +1,12 @@
 package io.github.nhwalker.vnc4j.protocol.interop;
 
-import io.github.nhwalker.vnc4j.protocol.ClientInit;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdate;
-import io.github.nhwalker.vnc4j.protocol.FramebufferUpdateRequest;
-import io.github.nhwalker.vnc4j.protocol.PixelFormat;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleRaw;
-import io.github.nhwalker.vnc4j.protocol.ServerInit;
-import io.github.nhwalker.vnc4j.protocol.SetEncodings;
+import io.github.nhwalker.vnc4j.protocol.messages.ClientInit;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdate;
+import io.github.nhwalker.vnc4j.protocol.messages.FramebufferUpdateRequest;
+import io.github.nhwalker.vnc4j.protocol.messages.PixelFormat;
+import io.github.nhwalker.vnc4j.protocol.messages.RfbRectangleRaw;
+import io.github.nhwalker.vnc4j.protocol.messages.ServerInit;
+import io.github.nhwalker.vnc4j.protocol.messages.SetEncodings;
 import io.github.nhwalker.vnc4j.protocol.VncServer;
 import io.github.nhwalker.vnc4j.protocol.VncSocketServer;
 import io.github.nhwalker.vnc4j.protocol.VncSocketServerHandle;

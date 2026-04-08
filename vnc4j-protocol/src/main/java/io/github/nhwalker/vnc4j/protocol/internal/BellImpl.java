@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.Bell;
+import io.github.nhwalker.vnc4j.protocol.messages.Bell;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,6 +1,6 @@
 package io.github.nhwalker.vnc4j.protocol.internal;
 
-import io.github.nhwalker.vnc4j.protocol.ClientInit;
+import io.github.nhwalker.vnc4j.protocol.messages.ClientInit;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
