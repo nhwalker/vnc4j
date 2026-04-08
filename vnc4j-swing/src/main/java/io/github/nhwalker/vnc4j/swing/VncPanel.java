@@ -6,12 +6,9 @@ import io.github.nhwalker.vnc4j.protocol.PixelFormat;
 import io.github.nhwalker.vnc4j.protocol.PointerEvent;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangle;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleCopyRect;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleCoRre;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleCursor;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleCursorWithAlpha;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleDesktopSize;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleExtendedDesktopSize;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleH264;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleHextile;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleJpeg;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleLastRect;
@@ -23,9 +20,7 @@ import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightJpeg;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngFill;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngJpeg;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleTightPngPng;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleXCursor;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleZlib;
-import io.github.nhwalker.vnc4j.protocol.RfbRectangleZlibHex;
 import io.github.nhwalker.vnc4j.protocol.RfbRectangleZrle;
 import io.github.nhwalker.vnc4j.protocol.ServerInit;
 import io.github.nhwalker.vnc4j.protocol.SetEncodings;
@@ -77,17 +72,12 @@ public class VncPanel extends JPanel implements VncClientFactory {
             0,     // Raw
             1,     // CopyRect
             2,     // RRE
-            4,     // CoRRE
             5,     // Hextile
             6,     // Zlib
             7,     // Tight
-            8,     // ZlibHex
             16,    // ZRLE
-            23,    // H264
             -260,  // TightPng
             -239,  // Cursor
-            -240,  // XCursor
-            -314,  // CursorWithAlpha
             -223,  // DesktopSize
             -308,  // ExtendedDesktopSize
             -224   // LastRect
@@ -317,7 +307,6 @@ public class VncPanel extends JPanel implements VncClientFactory {
         private RfbRectangleRawRender              rawRender;
         private RfbRectangleCopyRectRender         copyRectRender;
         private RfbRectangleRreRender              rreRender;
-        private RfbRectangleCoRreRender            coRreRender;
         private RfbRectangleHextileRender          hextileRender;
         private RfbRectangleZlibRender             zlibRender;
         private RfbRectangleTightBasicRender       tightBasicRender;
@@ -326,13 +315,9 @@ public class VncPanel extends JPanel implements VncClientFactory {
         private RfbRectangleTightPngFillRender     tightPngFillRender;
         private RfbRectangleTightPngJpegRender     tightPngJpegRender;
         private RfbRectangleTightPngPngRender      tightPngPngRender;
-        private RfbRectangleZlibHexRender          zlibHexRender;
         private RfbRectangleZrleRender             zrleRender;
         private RfbRectangleJpegRender             jpegRender;
-        private RfbRectangleH264Render             h264Render;
         private RfbRectangleCursorRender           cursorRender;
-        private RfbRectangleXCursorRender          xCursorRender;
-        private RfbRectangleCursorWithAlphaRender  cursorWithAlphaRender;
         private RfbRectangleDesktopSizeRender      desktopSizeRender;
         private RfbRectangleExtendedDesktopSizeRender extDesktopSizeRender;
         private RfbRectangleLastRectRender         lastRectRender;
@@ -348,7 +333,6 @@ public class VncPanel extends JPanel implements VncClientFactory {
             rawRender             = new RfbRectangleRawRender(pixelFormat);
             copyRectRender        = new RfbRectangleCopyRectRender();
             rreRender             = new RfbRectangleRreRender(pixelFormat);
-            coRreRender           = new RfbRectangleCoRreRender(pixelFormat);
             hextileRender         = new RfbRectangleHextileRender(pixelFormat);
             zlibRender            = new RfbRectangleZlibRender(pixelFormat);
             tightBasicRender      = new RfbRectangleTightBasicRender(pixelFormat);
@@ -357,13 +341,9 @@ public class VncPanel extends JPanel implements VncClientFactory {
             tightPngFillRender    = new RfbRectangleTightPngFillRender(pixelFormat);
             tightPngJpegRender    = new RfbRectangleTightPngJpegRender();
             tightPngPngRender     = new RfbRectangleTightPngPngRender();
-            zlibHexRender         = new RfbRectangleZlibHexRender(pixelFormat);
             zrleRender            = new RfbRectangleZrleRender(pixelFormat);
             jpegRender            = new RfbRectangleJpegRender();
-            h264Render            = new RfbRectangleH264Render();
             cursorRender          = new RfbRectangleCursorRender(pixelFormat);
-            xCursorRender         = new RfbRectangleXCursorRender();
-            cursorWithAlphaRender = new RfbRectangleCursorWithAlphaRender();
             desktopSizeRender     = new RfbRectangleDesktopSizeRender();
             extDesktopSizeRender  = new RfbRectangleExtendedDesktopSizeRender();
             lastRectRender        = new RfbRectangleLastRectRender();
@@ -425,7 +405,6 @@ public class VncPanel extends JPanel implements VncClientFactory {
                 case RfbRectangleRaw r             -> rawRender.render(r, framebuffer);
                 case RfbRectangleCopyRect r        -> copyRectRender.render(r, framebuffer);
                 case RfbRectangleRre r             -> rreRender.render(r, framebuffer);
-                case RfbRectangleCoRre r           -> coRreRender.render(r, framebuffer);
                 case RfbRectangleHextile r         -> hextileRender.render(r, framebuffer);
                 case RfbRectangleZlib r            -> zlibRender.render(r, framebuffer);
                 case RfbRectangleTightBasic r      -> tightBasicRender.render(r, framebuffer);
@@ -434,18 +413,14 @@ public class VncPanel extends JPanel implements VncClientFactory {
                 case RfbRectangleTightPngFill r    -> tightPngFillRender.render(r, framebuffer);
                 case RfbRectangleTightPngJpeg r    -> tightPngJpegRender.render(r, framebuffer);
                 case RfbRectangleTightPngPng r     -> tightPngPngRender.render(r, framebuffer);
-                case RfbRectangleZlibHex r         -> zlibHexRender.render(r, framebuffer);
                 case RfbRectangleZrle r            -> zrleRender.render(r, framebuffer);
                 case RfbRectangleJpeg r            -> jpegRender.render(r, framebuffer);
-                case RfbRectangleH264 r            -> h264Render.render(r, framebuffer);
                 case RfbRectangleDesktopSize r     -> resizeFramebuffer(r.width(), r.height());
                 case RfbRectangleExtendedDesktopSize r -> {
                     // r.y() == 0 means success; non-zero is an error status
                     if (r.y() == 0) resizeFramebuffer(r.width(), r.height());
                 }
                 case RfbRectangleCursor r          -> applyCustomCursor(r);
-                case RfbRectangleXCursor r         -> applyCustomCursor(r);
-                case RfbRectangleCursorWithAlpha r -> applyCustomCursor(r);
                 case RfbRectangleLastRect r        -> {} // sentinel: no more rectangles follow
             }
         }
@@ -472,24 +447,5 @@ public class VncPanel extends JPanel implements VncClientFactory {
                     setCursor(Toolkit.getDefaultToolkit().createCustomCursor(img, hotspot, "vnc")));
         }
 
-        private void applyCustomCursor(RfbRectangleXCursor r) {
-            int w = Math.max(1, r.width());
-            int h = Math.max(1, r.height());
-            BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-            xCursorRender.render(r, img);
-            Point hotspot = new Point(Math.min(r.x(), w - 1), Math.min(r.y(), h - 1));
-            SwingUtilities.invokeLater(() ->
-                    setCursor(Toolkit.getDefaultToolkit().createCustomCursor(img, hotspot, "vnc")));
-        }
-
-        private void applyCustomCursor(RfbRectangleCursorWithAlpha r) {
-            int w = Math.max(1, r.width());
-            int h = Math.max(1, r.height());
-            BufferedImage img = new BufferedImage(w, h, BufferedImage.TYPE_INT_ARGB);
-            cursorWithAlphaRender.render(r, img);
-            Point hotspot = new Point(Math.min(r.x(), w - 1), Math.min(r.y(), h - 1));
-            SwingUtilities.invokeLater(() ->
-                    setCursor(Toolkit.getDefaultToolkit().createCustomCursor(img, hotspot, "vnc")));
-        }
     }
 }

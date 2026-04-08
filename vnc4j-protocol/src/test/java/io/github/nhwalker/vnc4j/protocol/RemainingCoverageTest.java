@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Tests for remaining coverage gaps: from() builders for SetEncodings, SetPixelFormat,
- * XvpClientMessage, XvpServerMessage; RRE and CoRRE read round-trips; and VncServer
+ * XvpClientMessage, XvpServerMessage; RRE read round-trips; and VncServer
  * default method coverage via anonymous implementations.
  */
 class RemainingCoverageTest {
@@ -112,40 +112,6 @@ class RemainingCoverageTest {
                 .x(1).y(2).width(4).height(4)
                 .background(new byte[]{0x00}).subrects(List.of(sr)).build();
         RfbRectangleRre copy = RfbRectangleRre.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    /**
-     * CoRRE (encoding type 4) wire format after header:
-     * <pre>
-     * numberOfSubrects : U32
-     * background       : bytesPerPixel bytes
-     * subrects         : numberOfSubrects × (pixel + x:U8 + y:U8 + w:U8 + h:U8)
-     * </pre>
-     */
-    @Test
-    void testRfbRectangleCoRre_readRoundTrip() throws IOException {
-        CoRreSubrect sr = CoRreSubrect.newBuilder()
-                .pixel(new byte[]{0x44}).x(2).y(3).width(4).height(2).build();
-        RfbRectangleCoRre orig = RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(8).height(8)
-                .background(new byte[]{0x00}).subrects(List.of(sr)).build();
-        byte[] bytes = serialize(orig::write);
-        RfbRectangle result = RfbRectangle.read(streamOf(bytes), PF_8BPP);
-        assertInstanceOf(RfbRectangleCoRre.class, result);
-        RfbRectangleCoRre copy = (RfbRectangleCoRre) result;
-        assertEquals(orig, copy);
-        assertEquals(1, copy.subrects().size());
-        assertEquals(sr, copy.subrects().get(0));
-    }
-
-    @Test
-    void testRfbRectangleCoRre_fromBuilder() {
-        CoRreSubrect sr = CoRreSubrect.newBuilder().pixel(new byte[]{0x22}).x(0).y(0).width(3).height(3).build();
-        RfbRectangleCoRre orig = RfbRectangleCoRre.newBuilder()
-                .x(2).y(4).width(6).height(6)
-                .background(new byte[]{(byte)0xFF}).subrects(List.of(sr)).build();
-        RfbRectangleCoRre copy = RfbRectangleCoRre.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 
@@ -254,51 +220,6 @@ class RemainingCoverageTest {
         dos.write(reason);
         SecurityTypes copy = SecurityTypes.read(streamOf(baos.toByteArray()));
         assertEquals(List.of(), copy.securityTypes());
-    }
-
-    // -----------------------------------------------------------------------
-    // ZlibHexTile with background + plain (non-zlib) subrects
-    // -----------------------------------------------------------------------
-
-    /**
-     * ZlibHexTile with SUBENC_BACKGROUND_SPECIFIED | SUBENC_ANY_SUBRECTS (2+8=10):
-     * no zlib bit, so plain subrect list follows.
-     * Wire: subenc-byte, bg-pixel, subrect-count, subrect-records
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_bgWithPlainSubrects() throws IOException {
-        HextileSubrect sr = HextileSubrect.newBuilder().pixel(null).x(2).y(2).width(4).height(4).build();
-        ZlibHexTile orig = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED | ZlibHexTile.SUBENC_ANY_SUBRECTS)
-                .background(new byte[]{0x11})
-                .subrects(List.of(sr)).build();
-        byte[] bytes = serialize(orig::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 8, 8, 1);
-        assertEquals(ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED | ZlibHexTile.SUBENC_ANY_SUBRECTS,
-                copy.subencoding());
-        assertArrayEquals(new byte[]{0x11}, copy.background());
-        assertEquals(1, copy.subrects().size());
-    }
-
-    /**
-     * ZlibHexTile with SubrectsColoured (background + subrects with per-subrect colour).
-     */
-    @Test
-    void testZlibHexTile_readRoundTrip_colouredSubrects() throws IOException {
-        HextileSubrect sr = HextileSubrect.newBuilder()
-                .pixel(new byte[]{0x55}).x(1).y(1).width(3).height(2).build();
-        int subenc = ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED
-                | ZlibHexTile.SUBENC_ANY_SUBRECTS
-                | ZlibHexTile.SUBENC_SUBRECTS_COLOURED;
-        ZlibHexTile orig = ZlibHexTile.newBuilder()
-                .subencoding(subenc)
-                .background(new byte[]{0x00})
-                .subrects(List.of(sr)).build();
-        byte[] bytes = serialize(orig::write);
-        ZlibHexTile copy = ZlibHexTile.read(streamOf(bytes), 8, 8, 1);
-        assertEquals(subenc, copy.subencoding());
-        assertEquals(1, copy.subrects().size());
-        assertArrayEquals(new byte[]{0x55}, copy.subrects().get(0).pixel());
     }
 
     // -----------------------------------------------------------------------

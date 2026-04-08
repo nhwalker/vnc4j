@@ -22,8 +22,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * - {@code default int encodingType()} on all {@link RfbRectangle} sub-interfaces
  * - {@code Builder.from()} on singleton-style message builders with no fields
  * - Null-array branches in {@code write()} methods
- * - GiiIo little-endian write/read paths
- * - HextileTile and ZlibHexTile foreground-specified paths
+ * - HextileTile foreground-specified paths
  * - VncSocketClient String host+port constructor
  * - VncSocketClient/Server UnsupportedOperationException path in message loop
  */
@@ -68,11 +67,6 @@ class FinalCoverageTest {
                 RfbRectangleRre.newBuilder().x(0).y(0).width(1).height(1)
                         .background(new byte[1]).subrects(List.of()).build().encodingType());
 
-        // Encoding 4 – CoRRE
-        assertEquals(4,
-                RfbRectangleCoRre.newBuilder().x(0).y(0).width(1).height(1)
-                        .background(new byte[1]).subrects(List.of()).build().encodingType());
-
         // Encoding 5 – Hextile
         assertEquals(5,
                 RfbRectangleHextile.newBuilder().x(0).y(0).width(16).height(16)
@@ -88,11 +82,6 @@ class FinalCoverageTest {
                 RfbRectangleTightFill.newBuilder().x(0).y(0).width(1).height(1)
                         .streamResets(0).fillColor(new byte[]{0}).build().encodingType());
 
-        // Encoding 8 – ZlibHex
-        assertEquals(8,
-                RfbRectangleZlibHex.newBuilder().x(0).y(0).width(16).height(16)
-                        .tiles(List.of()).build().encodingType());
-
         // Encoding 16 – ZRLE
         assertEquals(16,
                 RfbRectangleZrle.newBuilder().x(0).y(0).width(1).height(1)
@@ -102,11 +91,6 @@ class FinalCoverageTest {
         assertEquals(21,
                 RfbRectangleJpeg.newBuilder().x(0).y(0).width(1).height(1)
                         .data(new byte[0]).build().encodingType());
-
-        // Encoding 50 – H264
-        assertEquals(50,
-                RfbRectangleH264.newBuilder().x(0).y(0).width(16).height(16)
-                        .flags(0).data(new byte[0]).build().encodingType());
 
         // Encoding -260 – TightPng (via TightPngFill subtype, inherits from RfbRectangleTightPng)
         assertEquals(-260,
@@ -128,20 +112,11 @@ class FinalCoverageTest {
                 RfbRectangleCursor.newBuilder().x(0).y(0).width(1).height(1)
                         .pixels(new byte[4]).bitmask(new byte[1]).build().encodingType());
 
-        // Encoding -240 – XCursor
-        assertEquals(-240,
-                RfbRectangleXCursor.newBuilder().x(0).y(0).width(0).height(0)
-                        .build().encodingType());
-
         // Encoding -308 – ExtendedDesktopSize
         assertEquals(-308,
                 RfbRectangleExtendedDesktopSize.newBuilder().x(0).y(0).width(100).height(100)
                         .screens(List.of()).build().encodingType());
 
-        // Encoding -314 – CursorWithAlpha
-        assertEquals(-314,
-                RfbRectangleCursorWithAlpha.newBuilder().x(0).y(0).width(0).height(0)
-                        .data(new byte[0]).build().encodingType());
     }
 
     // -----------------------------------------------------------------------
@@ -149,9 +124,8 @@ class FinalCoverageTest {
     // -----------------------------------------------------------------------
 
     /**
-     * Messages with no fields (Bell, EndOfContinuousUpdates, and the four QEMU audio
-     * control messages) have a {@code Builder.from(msg)} default that simply returns
-     * {@code this}. This exercises the 2-instruction method body.
+     * Messages with no fields (Bell, EndOfContinuousUpdates) have a {@code Builder.from(msg)}
+     * default that simply returns {@code this}. This exercises the 2-instruction method body.
      */
     @Test
     void testSingletonBuilderFrom() {
@@ -160,18 +134,6 @@ class FinalCoverageTest {
 
         EndOfContinuousUpdates ecu = EndOfContinuousUpdates.newBuilder().build();
         assertNotNull(EndOfContinuousUpdates.newBuilder().from(ecu).build());
-
-        QemuAudioClientEnable qce = QemuAudioClientEnable.newBuilder().build();
-        assertNotNull(QemuAudioClientEnable.newBuilder().from(qce).build());
-
-        QemuAudioClientDisable qcd = QemuAudioClientDisable.newBuilder().build();
-        assertNotNull(QemuAudioClientDisable.newBuilder().from(qcd).build());
-
-        QemuAudioServerBegin qsb = QemuAudioServerBegin.newBuilder().build();
-        assertNotNull(QemuAudioServerBegin.newBuilder().from(qsb).build());
-
-        QemuAudioServerEnd qse = QemuAudioServerEnd.newBuilder().build();
-        assertNotNull(QemuAudioServerEnd.newBuilder().from(qse).build());
     }
 
     // -----------------------------------------------------------------------
@@ -189,13 +151,6 @@ class FinalCoverageTest {
     void testServerFence_builderFrom() {
         ServerFence orig = ServerFence.newBuilder().flags(7).payload(new byte[]{0x02}).build();
         ServerFence copy = ServerFence.newBuilder().from(orig).build();
-        assertEquals(orig, copy);
-    }
-
-    @Test
-    void testQemuAudioServerData_builderFrom() {
-        QemuAudioServerData orig = QemuAudioServerData.newBuilder().data(new byte[]{0x33}).build();
-        QemuAudioServerData copy = QemuAudioServerData.newBuilder().from(orig).build();
         assertEquals(orig, copy);
     }
 
@@ -270,15 +225,6 @@ class FinalCoverageTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         msg.write(baos);
         assertEquals(16, baos.size());
-    }
-
-    @Test
-    void testWrite_nullData_qemuAudioServerData() throws IOException {
-        QemuAudioServerData msg = QemuAudioServerData.newBuilder().data(null).build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        msg.write(baos);
-        // 1 type + 1 sub + 2 op + 4 length = 8 bytes
-        assertEquals(8, baos.size());
     }
 
     @Test
@@ -365,153 +311,6 @@ class FinalCoverageTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         assertDoesNotThrow(() -> msg.write(baos));
         assertEquals(1, baos.size()); // only subencoding byte
-    }
-
-    // -----------------------------------------------------------------------
-    // ZlibHexTile with FOREGROUND_SPECIFIED and null-zlib paths
-    // -----------------------------------------------------------------------
-
-    /**
-     * ZlibHexTile with SUBENC_BACKGROUND_SPECIFIED | SUBENC_FOREGROUND_SPECIFIED (2|4=6):
-     * no zlib, no subrects — only bg and fg pixels follow the subencoding byte.
-     */
-    @Test
-    void testZlibHexTile_foregroundSpecified_writeRead() throws IOException {
-        int subenc = ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED
-                | ZlibHexTile.SUBENC_FOREGROUND_SPECIFIED;
-        ZlibHexTile orig = ZlibHexTile.newBuilder()
-                .subencoding(subenc)
-                .background(new byte[]{0x11})
-                .foreground(new byte[]{0x22})
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        ZlibHexTile copy = ZlibHexTile.read(new ByteArrayInputStream(baos.toByteArray()), 8, 8, 1);
-        assertEquals(subenc, copy.subencoding());
-        assertArrayEquals(new byte[]{0x11}, copy.background());
-        assertArrayEquals(new byte[]{0x22}, copy.foreground());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_ZLIB_RAW (32): null zlibRawData guard
-     * → writes length=0.
-     */
-    @Test
-    void testZlibHexTile_zlibRaw_nullData() throws IOException {
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ZLIB_RAW)
-                .zlibRawData(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        // subenc byte + 2-byte length (0)
-        assertEquals(3, baos.size());
-    }
-
-    /**
-     * ZlibHexTile with SUBENC_ANY_SUBRECTS | SUBENC_ZLIB (8|64=72): null zlibSubrectData guard
-     * → writes length=0.
-     */
-    @Test
-    void testZlibHexTile_zlibSubrects_nullData() throws IOException {
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_ANY_SUBRECTS | ZlibHexTile.SUBENC_ZLIB)
-                .zlibSubrectData(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        // subenc byte + 2-byte length (0)
-        assertEquals(3, baos.size());
-    }
-
-    /**
-     * ZlibHexTile with null background/foreground when those flags are set.
-     */
-    @Test
-    void testZlibHexTile_nullBgFg_noThrow() throws IOException {
-        int subenc = ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED
-                | ZlibHexTile.SUBENC_FOREGROUND_SPECIFIED;
-        ZlibHexTile msg = ZlibHexTile.newBuilder()
-                .subencoding(subenc)
-                .background(null)
-                .foreground(null)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        assertDoesNotThrow(() -> msg.write(baos));
-        assertEquals(1, baos.size()); // only subencoding byte
-    }
-
-    // -----------------------------------------------------------------------
-    // GiiIo little-endian write/read paths
-    // -----------------------------------------------------------------------
-
-    /**
-     * GiiDeviceDestruction with bigEndian=false exercises GiiIo.writeEU16(LE) and
-     * GiiIo.writeEU32(LE) in write(), and GiiIo.readEU16(LE) and GiiIo.readEU32(LE)
-     * in read().
-     *
-     * <p>RFB GII extension wire format for DeviceDestruction:
-     * <pre>
-     * message-type (1 byte = 253)
-     * endian-and-sub-type (1 byte): low 2 bits = event sub-type, high bit = big-endian flag
-     * length (EU16): 4
-     * device-origin (EU32)
-     * </pre>
-     */
-    @Test
-    void testGiiDeviceDestruction_littleEndian_writeRead() throws IOException {
-        GiiDeviceDestruction orig = GiiDeviceDestruction.newBuilder()
-                .bigEndian(false)
-                .deviceOrigin(0x12345678L)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos);
-        byte[] bytes = baos.toByteArray();
-        assertEquals(8, bytes.length); // 1 type + 1 endian+sub + 2 len + 4 origin
-        assertEquals((byte) 253, bytes[0]); // message-type
-        // read() skips the first byte (message-type); pass bytes[1..]
-        InputStream in = new ByteArrayInputStream(bytes, 1, bytes.length - 1);
-        GiiDeviceDestruction copy = GiiDeviceDestruction.read(in);
-        assertFalse(copy.bigEndian());
-        assertEquals(0x12345678L, copy.deviceOrigin());
-    }
-
-    /**
-     * GiiValuator with bigEndian=false exercises GiiIo.writeES32(LE) and writeEU32(LE)
-     * in write(). Using a round-trip via write(false) + read(false).
-     *
-     * <p>GII Valuator record wire layout (per endianness):
-     * <pre>
-     * index      (EU32)
-     * longName   (74 bytes + NUL)
-     * shortName  (4 bytes + NUL)
-     * range-min, range-center, range-max (ES32 each)
-     * si-unit    (EU32)
-     * si-add, si-mul, si-div, si-shift (ES32 each)
-     * </pre>
-     */
-    @Test
-    void testGiiValuator_littleEndian_writeRead() throws IOException {
-        GiiValuator orig = GiiValuator.newBuilder()
-                .index(1)
-                .longName("X")
-                .shortName("X")
-                .rangeMin(-100)
-                .rangeCenter(0)
-                .rangeMax(100)
-                .siUnit(0)
-                .siAdd(0)
-                .siMul(1)
-                .siDiv(1)
-                .siShift(0)
-                .build();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        orig.write(baos, false); // bigEndian=false → covers GiiIo LE write paths
-        GiiValuator copy = GiiValuator.read(new ByteArrayInputStream(baos.toByteArray()), false);
-        assertEquals(1L, copy.index());
-        assertEquals("X", copy.longName());
-        assertEquals(-100, copy.rangeMin());
-        assertEquals(100, copy.rangeMax());
     }
 
     // -----------------------------------------------------------------------

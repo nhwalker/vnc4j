@@ -42,11 +42,6 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testQemuAudioServerData_equalsGuards() {
-        assertEqualsGuards(QemuAudioServerData.newBuilder().data(new byte[]{1}).build());
-    }
-
-    @Test
     void testRfbRectangleLastRect_equalsGuards() {
         assertEqualsGuards(RfbRectangleLastRect.newBuilder().x(0).y(0).width(0).height(0).build());
     }
@@ -54,11 +49,6 @@ class EqualsEdgeCaseTest {
     @Test
     void testRfbRectangleDesktopSize_equalsGuards() {
         assertEqualsGuards(RfbRectangleDesktopSize.newBuilder().x(0).y(0).width(100).height(100).build());
-    }
-
-    @Test
-    void testRfbRectangleH264_equalsGuards() {
-        assertEqualsGuards(RfbRectangleH264.newBuilder().x(0).y(0).width(16).height(16).flags(0).data(new byte[]{}).build());
     }
 
     @Test
@@ -99,13 +89,6 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testRfbRectangleCoRre_equalsGuards() {
-        assertEqualsGuards(RfbRectangleCoRre.newBuilder()
-                .x(0).y(0).width(1).height(1)
-                .background(new byte[]{0}).subrects(List.of()).build());
-    }
-
-    @Test
     void testRfbRectangleCopyRect_equalsGuards() {
         assertEqualsGuards(RfbRectangleCopyRect.newBuilder()
                 .x(0).y(0).width(1).height(1).srcX(0).srcY(0).build());
@@ -116,12 +99,6 @@ class EqualsEdgeCaseTest {
         assertEqualsGuards(RfbRectangleCursor.newBuilder()
                 .x(0).y(0).width(1).height(1)
                 .pixels(new byte[4]).bitmask(new byte[1]).build());
-    }
-
-    @Test
-    void testRfbRectangleCursorWithAlpha_equalsGuards() {
-        assertEqualsGuards(RfbRectangleCursorWithAlpha.newBuilder()
-                .x(0).y(0).width(0).height(0).data(new byte[0]).build());
     }
 
     @Test
@@ -155,23 +132,9 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testRfbRectangleZlibHex_equalsGuards() {
-        assertEqualsGuards(RfbRectangleZlibHex.newBuilder()
-                .x(0).y(0).width(16).height(16).tiles(List.of()).build());
-    }
-
-    @Test
     void testRfbRectangleHextile_equalsGuards() {
         assertEqualsGuards(RfbRectangleHextile.newBuilder()
                 .x(0).y(0).width(16).height(16).tiles(List.of()).build());
-    }
-
-    @Test
-    void testZlibHexTile_equalsGuards() {
-        ZlibHexTile tile = ZlibHexTile.newBuilder()
-                .subencoding(ZlibHexTile.SUBENC_BACKGROUND_SPECIFIED)
-                .background(new byte[]{0x11}).build();
-        assertEqualsGuards(tile);
     }
 
     @Test
@@ -185,12 +148,6 @@ class EqualsEdgeCaseTest {
     @Test
     void testRreSubrect_equalsGuards() {
         assertEqualsGuards(RreSubrect.newBuilder()
-                .pixel(new byte[]{0}).x(0).y(0).width(1).height(1).build());
-    }
-
-    @Test
-    void testCoRreSubrect_equalsGuards() {
-        assertEqualsGuards(CoRreSubrect.newBuilder()
                 .pixel(new byte[]{0}).x(0).y(0).width(1).height(1).build());
     }
 
@@ -226,12 +183,6 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testGiiServerVersion_equalsGuards() {
-        assertEqualsGuards(GiiServerVersion.newBuilder()
-                .bigEndian(false).maximumVersion(2).minimumVersion(1).build());
-    }
-
-    @Test
     void testEnableContinuousUpdates_equalsGuards() {
         assertEqualsGuards(EnableContinuousUpdates.newBuilder()
                 .enable(true).x(0).y(0).width(800).height(600).build());
@@ -263,42 +214,6 @@ class EqualsEdgeCaseTest {
     }
 
     @Test
-    void testGiiValuator_equalsGuards() {
-        GiiValuator v = GiiValuator.newBuilder()
-                .index(0).longName("X").shortName("X")
-                .rangeMin(-100).rangeCenter(0).rangeMax(100)
-                .siUnit(0).siAdd(0).siMul(1).siDiv(1).siShift(0).build();
-        assertEqualsGuards(v);
-    }
-
-    @Test
-    void testGiiDeviceCreation_equalsGuards() {
-        GiiDeviceCreation orig = GiiDeviceCreation.newBuilder()
-                .bigEndian(true).deviceName("Test")
-                .vendorId(0L).productId(0L).canGenerate(0L)
-                .numRegisters(0L).numButtons(0L)
-                .valuators(List.of()).build();
-        assertEqualsGuards(orig);
-    }
-
-    @Test
-    void testGiiDeviceCreationResponse_equalsGuards() {
-        assertEqualsGuards(GiiDeviceCreationResponse.newBuilder()
-                .bigEndian(true).deviceOrigin(1L).build());
-    }
-
-    @Test
-    void testGiiInjectEvents_equalsGuards() {
-        assertEqualsGuards(GiiInjectEvents.newBuilder().events(List.of()).build());
-    }
-
-    @Test
-    void testGiiValuatorEvent_equalsGuards() {
-        assertEqualsGuards(GiiValuatorEvent.newBuilder()
-                .deviceOrigin(0L).first(0L).values(List.of()).build());
-    }
-
-    @Test
     void testRfbRectangleTightBasic_equalsGuards() {
         RfbRectangleTightBasic orig = RfbRectangleTightBasic.newBuilder()
                 .x(0).y(0).width(4).height(4).streamResets(0)
@@ -309,9 +224,4 @@ class EqualsEdgeCaseTest {
         assertEqualsGuards(orig);
     }
 
-    @Test
-    void testRfbRectangleXCursor_equalsGuards() {
-        assertEqualsGuards(RfbRectangleXCursor.newBuilder()
-                .x(0).y(0).width(0).height(0).build());
-    }
 }

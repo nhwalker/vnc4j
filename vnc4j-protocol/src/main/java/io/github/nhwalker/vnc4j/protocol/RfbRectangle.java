@@ -8,11 +8,11 @@ package io.github.nhwalker.vnc4j.protocol;
  * Each concrete subtype exposes fully typed fields for its payload.
  */
 public sealed interface RfbRectangle
-        permits RfbRectangleRaw, RfbRectangleCopyRect, RfbRectangleRre, RfbRectangleCoRre,
-                RfbRectangleHextile, RfbRectangleZlib, RfbRectangleTight, RfbRectangleZlibHex,
-                RfbRectangleZrle, RfbRectangleJpeg, RfbRectangleH264, RfbRectangleTightPng,
+        permits RfbRectangleRaw, RfbRectangleCopyRect, RfbRectangleRre,
+                RfbRectangleHextile, RfbRectangleZlib, RfbRectangleTight,
+                RfbRectangleZrle, RfbRectangleJpeg, RfbRectangleTightPng,
                 RfbRectangleDesktopSize, RfbRectangleLastRect, RfbRectangleCursor,
-                RfbRectangleXCursor, RfbRectangleExtendedDesktopSize, RfbRectangleCursorWithAlpha {
+                RfbRectangleExtendedDesktopSize {
 
     int x();
     int y();
