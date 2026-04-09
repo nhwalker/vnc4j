@@ -1,0 +1,823 @@
+syntax = "proto3";
+
+package io.github.nhwalker.vnc4j.grpc;
+
+option java_package = "io.github.nhwalker.vnc4j.grpc";
+option java_outer_classname = "VncProto";
+option java_multiple_files = true;
+
+// ============================================================================
+// COMMON STRUCTURES
+// ============================================================================
+
+// Describes the pixel encoding used in framebuffer data.
+message PixelFormat {
+  // Bits used per pixel (typically 8, 16, or 32).
+  int32 bits_per_pixel = 1;
+  // Number of meaningful colour bits (depth <= bits_per_pixel).
+  int32 depth = 2;
+  // True if multi-byte values are big-endian.
+  bool big_endian = 3;
+  // True for true-colour mode; false for indexed/palette mode.
+  bool true_colour = 4;
+  // Maximum value of the red component.
+  int32 red_max = 5;
+  // Maximum value of the green component.
+  int32 green_max = 6;
+  // Maximum value of the blue component.
+  int32 blue_max = 7;
+  // Number of bits to shift right to extract the red component.
+  int32 red_shift = 8;
+  // Number of bits to shift right to extract the green component.
+  int32 green_shift = 9;
+  // Number of bits to shift right to extract the blue component.
+  int32 blue_shift = 10;
+}
+
+// Represents a single monitor in a multi-monitor layout.
+message Screen {
+  // Opaque per-screen identifier assigned by the server.
+  uint32 id = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 width = 4;
+  int32 height = 5;
+  // Implementation-defined flags.
+  uint32 flags = 6;
+}
+
+// One entry in a colour-map (palette) update.
+message ColourMapEntry {
+  // Red intensity in the range 0–65535.
+  int32 red = 1;
+  // Green intensity in the range 0–65535.
+  int32 green = 2;
+  // Blue intensity in the range 0–65535.
+  int32 blue = 3;
+}
+
+// ============================================================================
+// HANDSHAKE MESSAGES
+// ============================================================================
+
+// RFB protocol version announced by both sides during the initial handshake.
+message ProtocolVersion {
+  int32 major = 1;
+  int32 minor = 2;
+}
+
+// List of security types the server is willing to accept.
+message SecurityTypesAdvertisement {
+  // Each value is a SecurityType constant (1 = None, 2 = VncAuth, …).
+  repeated int32 security_types = 1;
+}
+
+// Client's chosen security type.
+message SecurityTypeSelection {
+  // Must be one of the values advertised by the server.
+  int32 security_type = 1;
+}
+
+// Server's verdict after the client completes authentication.
+message SecurityResult {
+  enum Status {
+    // Authentication succeeded.
+    OK = 0;
+    // Authentication failed.
+    FAILED = 1;
+    // Authentication failed and no further attempts are permitted.
+    FAILED_TOO_MANY = 2;
+  }
+  Status status = 1;
+  // Human-readable explanation, present only when status != OK.
+  string failure_reason = 2;
+}
+
+// Client's post-authentication declaration.
+message ClientInit {
+  // If true, the server may share the desktop with other clients.
+  bool shared = 1;
+}
+
+// Server's response to ClientInit; describes the initial desktop state.
+message ServerInit {
+  int32 framebuffer_width = 1;
+  int32 framebuffer_height = 2;
+  PixelFormat pixel_format = 3;
+  // Human-readable desktop name.
+  string name = 4;
+}
+
+// ============================================================================
+// RECTANGLE ENCODINGS  (carried inside FramebufferUpdate)
+// ============================================================================
+
+// Uncompressed pixel data for the rectangle region.
+message RawEncoding {
+  // Raw pixel bytes in the negotiated pixel format, row-major order.
+  bytes pixels = 1;
+}
+
+// Copy pixels from another region of the current framebuffer.
+message CopyRectEncoding {
+  // Top-left corner of the source region.
+  int32 src_x = 1;
+  int32 src_y = 2;
+}
+
+// One coloured sub-rectangle within an RRE or CoRRE encoding.
+message SubRect {
+  // Pixel value in the negotiated pixel format.
+  bytes pixel = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+// Rise-and-Run-length encoding: one background colour plus sub-rectangles.
+message RreEncoding {
+  bytes background_pixel = 1;
+  repeated SubRect subrects = 2;
+}
+
+// Compact RRE: coordinates and dimensions are limited to 8-bit values.
+message CoRreEncoding {
+  bytes background_pixel = 1;
+  repeated SubRect subrects = 2;
+}
+
+// One sub-rectangle within a Hextile or ZlibHex tile.
+message HextileSubrect {
+  // Present only when the tile uses per-subrect colours.
+  bytes pixel = 1;
+  // Position within the tile (0–15).
+  int32 x = 2;
+  int32 y = 3;
+  // Dimensions within the tile (1–16).
+  int32 width = 4;
+  int32 height = 5;
+}
+
+// One 16×16 tile in a Hextile-encoded rectangle.
+message HextileTile {
+  // True when the tile is encoded as raw pixel data.
+  bool raw = 1;
+  // Background pixel for the tile; absent when raw=true.
+  bytes background_pixel = 2;
+  // Foreground pixel for subrects; absent when raw=true or not specified.
+  bytes foreground_pixel = 3;
+  // True when each subrect carries its own colour.
+  bool subrects_coloured = 4;
+  // Raw pixel bytes; present only when raw=true.
+  bytes raw_pixels = 5;
+  // Subrects; present only when raw=false.
+  repeated HextileSubrect subrects = 6;
+}
+
+// Hextile encoding: the rectangle is divided into 16×16 tiles.
+message HextileEncoding {
+  repeated HextileTile tiles = 1;
+}
+
+// zlib-compressed raw pixels.
+message ZlibEncoding {
+  bytes zlib_data = 1;
+}
+
+// Filter applied to pixel data before Tight compression.
+enum TightFilterType {
+  // Copy pixels verbatim (no filter).
+  TIGHT_FILTER_COPY = 0;
+  // Apply a colour palette.
+  TIGHT_FILTER_PALETTE = 1;
+  // Apply a gradient filter.
+  TIGHT_FILTER_GRADIENT = 2;
+}
+
+// Tight fill sub-type: the entire rectangle is one solid colour.
+message TightFill {
+  // Bitmask of zlib streams to reset before decoding (bits 0–3).
+  int32 stream_resets = 1;
+  bytes fill_color = 2;
+}
+
+// Tight JPEG sub-type: the rectangle is JPEG-compressed.
+message TightJpeg {
+  int32 stream_resets = 1;
+  bytes jpeg_data = 2;
+}
+
+// Tight basic sub-type: zlib-compressed pixel data with an optional filter.
+message TightBasic {
+  int32 stream_resets = 1;
+  // Index of the zlib stream used (0–3).
+  int32 stream_number = 2;
+  TightFilterType filter_type = 3;
+  // Number of palette entries; meaningful only when filter_type=PALETTE.
+  int32 palette_size = 4;
+  // Palette bytes; present only when filter_type=PALETTE.
+  bytes palette = 5;
+  bytes compressed_data = 6;
+}
+
+// Tight encoding (encoding type 7).
+message TightEncoding {
+  oneof type {
+    TightFill fill = 1;
+    TightJpeg jpeg = 2;
+    TightBasic basic = 3;
+  }
+}
+
+// TightPNG fill sub-type.
+message TightPngFill {
+  int32 stream_resets = 1;
+  bytes fill_color = 2;
+}
+
+// TightPNG JPEG sub-type.
+message TightPngJpeg {
+  int32 stream_resets = 1;
+  bytes jpeg_data = 2;
+}
+
+// TightPNG PNG sub-type.
+message TightPngPng {
+  int32 stream_resets = 1;
+  bytes png_data = 2;
+}
+
+// TightPNG encoding (encoding type -260): like Tight but uses PNG.
+message TightPngEncoding {
+  oneof type {
+    TightPngFill fill = 1;
+    TightPngJpeg jpeg = 2;
+    TightPngPng png = 3;
+  }
+}
+
+// One 16×16 tile in a ZlibHex-encoded rectangle.
+message ZlibHexTile {
+  // True when the tile is encoded as raw pixel data.
+  bool raw = 1;
+  bool background_specified = 2;
+  bool foreground_specified = 3;
+  bool any_subrects = 4;
+  bool subrects_coloured = 5;
+  // True when raw pixel data is zlib-compressed.
+  bool zlib_raw = 6;
+  // True when subrect data is zlib-compressed.
+  bool zlib_subrects = 7;
+  bytes background_pixel = 8;
+  bytes foreground_pixel = 9;
+  // Uncompressed raw pixels; present when raw=true, zlib_raw=false.
+  bytes raw_pixels = 10;
+  // zlib-compressed raw pixels; present when raw=true, zlib_raw=true.
+  bytes zlib_raw_data = 11;
+  // zlib-compressed subrect data; present when zlib_subrects=true.
+  bytes zlib_subrect_data = 12;
+  // Decoded subrects; present when any_subrects=true, zlib_subrects=false.
+  repeated HextileSubrect subrects = 13;
+}
+
+// ZlibHex encoding (encoding type 8): Hextile tiles with optional zlib.
+message ZlibHexEncoding {
+  repeated ZlibHexTile tiles = 1;
+}
+
+// ZRLE (zlib Run-Length Encoded) encoding (encoding type 16).
+message ZrleEncoding {
+  bytes zlib_data = 1;
+}
+
+// Raw JPEG encoding (encoding type 21).
+message JpegEncoding {
+  bytes data = 1;
+}
+
+// H.264 video encoding (encoding type 50).
+message H264Encoding {
+  uint32 flags = 1;
+  bytes data = 2;
+}
+
+// Cursor image pseudo-encoding (encoding type -239).
+message CursorEncoding {
+  // Pixel data in the negotiated pixel format.
+  bytes pixels = 1;
+  // 1-bit-per-pixel bitmap mask indicating opaque pixels.
+  bytes bitmask = 2;
+}
+
+// X-style two-colour cursor pseudo-encoding (encoding type -240).
+message XCursorEncoding {
+  // Primary (foreground) colour components (0–255).
+  int32 primary_r = 1;
+  int32 primary_g = 2;
+  int32 primary_b = 3;
+  // Secondary (background) colour components (0–255).
+  int32 secondary_r = 4;
+  int32 secondary_g = 5;
+  int32 secondary_b = 6;
+  // 1-bit-per-pixel foreground bitmap.
+  bytes bitmap = 7;
+  // 1-bit-per-pixel mask (1 = opaque).
+  bytes bitmask = 8;
+}
+
+// Cursor with alpha-channel pseudo-encoding (encoding type -314).
+message CursorWithAlphaEncoding {
+  // Encoding used for the pixel data within this cursor.
+  int32 encoding = 1;
+  bytes data = 2;
+}
+
+// DesktopSize pseudo-encoding (encoding type -223).
+// Signals a desktop resize; dimensions are taken from the rectangle header.
+message DesktopSizeEncoding {}
+
+// ExtendedDesktopSize pseudo-encoding (encoding type -308).
+// Carries a full multi-monitor layout.
+message ExtendedDesktopSizeEncoding {
+  repeated Screen screens = 1;
+}
+
+// LastRect pseudo-encoding (encoding type -224).
+// Signals the end of a FramebufferUpdate; no further rectangles follow.
+message LastRectEncoding {}
+
+// A single rectangle in a FramebufferUpdate.
+message Rectangle {
+  int32 x = 1;
+  int32 y = 2;
+  int32 width = 3;
+  int32 height = 4;
+  oneof encoding {
+    RawEncoding raw = 5;
+    CopyRectEncoding copy_rect = 6;
+    RreEncoding rre = 7;
+    CoRreEncoding co_rre = 8;
+    HextileEncoding hextile = 9;
+    ZlibEncoding zlib = 10;
+    TightEncoding tight = 11;
+    TightPngEncoding tight_png = 12;
+    ZlibHexEncoding zlib_hex = 13;
+    ZrleEncoding zrle = 14;
+    JpegEncoding jpeg = 15;
+    H264Encoding h264 = 16;
+    CursorEncoding cursor = 17;
+    XCursorEncoding x_cursor = 18;
+    CursorWithAlphaEncoding cursor_with_alpha = 19;
+    DesktopSizeEncoding desktop_size = 20;
+    ExtendedDesktopSizeEncoding extended_desktop_size = 21;
+    LastRectEncoding last_rect = 22;
+  }
+}
+
+// ============================================================================
+// SERVER-TO-CLIENT MESSAGES
+// ============================================================================
+
+// Server message type 0: delivers updated pixel rectangles to the client.
+message FramebufferUpdate {
+  repeated Rectangle rectangles = 1;
+}
+
+// Server message type 1: updates entries in the colour map (palette mode).
+message SetColourMapEntries {
+  // Index of the first colour map entry being updated.
+  int32 first_colour = 1;
+  repeated ColourMapEntry colours = 2;
+}
+
+// Server message type 2: requests the client to ring an audible or visual bell.
+message Bell {}
+
+// Server message type 3: delivers clipboard text from the server's clipboard.
+message ServerCutText {
+  // Text encoded as ISO 8859-1.
+  bytes text = 1;
+}
+
+// Signals that the server has left continuous-update mode.
+message EndOfContinuousUpdates {}
+
+// Flow-control / synchronisation fence message (server → client).
+message ServerFence {
+  // Combination of fence flag bits (BlockBefore, BlockAfter, SyncNext, …).
+  uint32 flags = 1;
+  // Opaque payload echoed back to distinguish concurrent fences.
+  bytes payload = 2;
+}
+
+// XVP extension – server capability or power-state notification.
+message XvpServerMessage {
+  // Highest XVP version the server supports.
+  int32 xvp_version = 1;
+  // XVP message code (e.g. XVP_FAIL, XVP_INIT, XVP_AUTH).
+  int32 xvp_message_code = 2;
+}
+
+// GII extension – server announces supported version range.
+message GiiServerVersion {
+  bool big_endian = 1;
+  int32 minimum_version = 2;
+  int32 maximum_version = 3;
+}
+
+// GII extension – server confirms (or rejects) virtual device creation.
+message GiiDeviceCreationResponse {
+  bool big_endian = 1;
+  // Opaque device handle; 0 indicates failure.
+  uint64 device_origin = 2;
+}
+
+// Wrapper for all GII server sub-messages.
+message GiiServerMessage {
+  oneof message {
+    GiiServerVersion version = 1;
+    GiiDeviceCreationResponse device_creation_response = 2;
+  }
+}
+
+// QEMU audio extension – server signals start of an audio stream.
+message QemuAudioServerBegin {}
+
+// QEMU audio extension – server signals end of an audio stream.
+message QemuAudioServerEnd {}
+
+// QEMU audio extension – one chunk of raw audio samples from the server.
+message QemuAudioServerData {
+  bytes data = 1;
+}
+
+// Wrapper for all QEMU audio server sub-messages.
+message QemuAudioServerMessage {
+  oneof type {
+    QemuAudioServerBegin begin = 1;
+    QemuAudioServerEnd end = 2;
+    QemuAudioServerData data = 3;
+  }
+}
+
+// Wrapper for all QEMU server sub-messages.
+message QemuServerMessage {
+  oneof message {
+    QemuAudioServerMessage audio = 1;
+  }
+}
+
+// Union of every message the server may send after session initialisation.
+message ServerMessage {
+  oneof message {
+    FramebufferUpdate framebuffer_update = 1;
+    SetColourMapEntries set_colour_map_entries = 2;
+    Bell bell = 3;
+    ServerCutText server_cut_text = 4;
+    EndOfContinuousUpdates end_of_continuous_updates = 5;
+    ServerFence server_fence = 6;
+    XvpServerMessage xvp = 7;
+    GiiServerMessage gii = 8;
+    QemuServerMessage qemu = 9;
+  }
+}
+
+// ============================================================================
+// CLIENT-TO-SERVER MESSAGES
+// ============================================================================
+
+// Client message type 0: requests a change in pixel format.
+message SetPixelFormat {
+  PixelFormat pixel_format = 1;
+}
+
+// Client message type 2: declares which rectangle encodings the client supports.
+// The server should prefer encodings that appear earlier in the list.
+message SetEncodings {
+  // Encoding type constants in preference order; pseudo-encodings are included
+  // to advertise optional capabilities (e.g. DesktopSize, Cursor, Fence …).
+  repeated int32 encodings = 1;
+}
+
+// Client message type 3: requests a framebuffer update for a specific region.
+message FramebufferUpdateRequest {
+  // If true, only changed pixels need to be sent (incremental update).
+  // If false, the server must send the full region regardless of changes.
+  bool incremental = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+// Client message type 4: key press or release event.
+message KeyEvent {
+  // True = key pressed; false = key released.
+  bool down = 1;
+  // X11 keysym identifying the key (e.g. 0xff0d = Return).
+  uint32 key = 2;
+}
+
+// Client message type 5: mouse or pointer event.
+message PointerEvent {
+  // Bitmask of currently pressed buttons: bit 0 = left, bit 1 = middle,
+  // bit 2 = right, bits 3–7 = additional buttons.
+  int32 button_mask = 1;
+  // Pointer position in framebuffer coordinates.
+  int32 x = 2;
+  int32 y = 3;
+}
+
+// Client message type 6: clipboard text from the client.
+message ClientCutText {
+  // Text encoded as ISO 8859-1.
+  bytes text = 1;
+}
+
+// Enables or disables continuous (unsolicited) framebuffer updates for a region.
+message EnableContinuousUpdates {
+  bool enable = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 width = 4;
+  int32 height = 5;
+}
+
+// Flow-control / synchronisation fence message (client → server).
+message ClientFence {
+  uint32 flags = 1;
+  bytes payload = 2;
+}
+
+// Requests the server to resize the desktop and/or change the monitor layout.
+message SetDesktopSize {
+  int32 width = 1;
+  int32 height = 2;
+  repeated Screen screens = 3;
+}
+
+// XVP extension – client requests a power-management action.
+message XvpClientMessage {
+  // XVP version in use.
+  int32 xvp_version = 1;
+  // Action code: 2 = shutdown, 3 = reboot, 4 = reset.
+  int32 xvp_message_code = 2;
+}
+
+// Descriptor for one analog axis on a GII virtual device.
+message GiiValuator {
+  // Axis index (0-based).
+  uint64 index = 1;
+  string long_name = 2;
+  string short_name = 3;
+  int32 range_min = 4;
+  int32 range_center = 5;
+  int32 range_max = 6;
+  // SI unit identifier.
+  uint64 si_unit = 7;
+  // Linear mapping coefficients: physical = (raw + si_add) * si_mul / si_div << si_shift.
+  int32 si_add = 8;
+  int32 si_mul = 9;
+  int32 si_div = 10;
+  int32 si_shift = 11;
+}
+
+// GII extension – client announces its supported GII version.
+message GiiClientVersion {
+  bool big_endian = 1;
+  int32 version = 2;
+}
+
+// GII extension – client requests creation of a virtual input device.
+message GiiDeviceCreation {
+  bool big_endian = 1;
+  string device_name = 2;
+  uint64 vendor_id = 3;
+  uint64 product_id = 4;
+  // Bitmask of event types the device can generate.
+  uint64 can_generate = 5;
+  uint64 num_registers = 6;
+  uint64 num_buttons = 7;
+  repeated GiiValuator valuators = 8;
+}
+
+// GII extension – client destroys a previously created virtual device.
+message GiiDeviceDestruction {
+  bool big_endian = 1;
+  uint64 device_origin = 2;
+}
+
+// GII key event (press, release, or repeat).
+message GiiKeyEvent {
+  uint64 device_origin = 1;
+  // Active modifier bitmask.
+  uint64 modifiers = 2;
+  // GII keysym.
+  uint64 symbol = 3;
+  // Physical key label.
+  uint64 label = 4;
+  // Button number on the device.
+  uint64 button = 5;
+}
+
+// GII pointer movement event (relative or absolute).
+message GiiPointerMoveEvent {
+  uint64 device_origin = 1;
+  int32 x = 2;
+  int32 y = 3;
+  int32 z = 4;
+  int32 wheel = 5;
+}
+
+// GII pointer button press or release event.
+message GiiPointerButtonEvent {
+  uint64 device_origin = 1;
+  uint64 button_number = 2;
+}
+
+// GII valuator (analog axis) change event (relative or absolute).
+message GiiValuatorEvent {
+  uint64 device_origin = 1;
+  // Index of the first valuator in the values list.
+  uint64 first = 2;
+  repeated int32 values = 3;
+}
+
+// Union of all GII event types injected by the client.
+message GiiEvent {
+  oneof event {
+    GiiKeyEvent key_press = 1;
+    GiiKeyEvent key_release = 2;
+    GiiKeyEvent key_repeat = 3;
+    GiiPointerMoveEvent pointer_move_relative = 4;
+    GiiPointerMoveEvent pointer_move_absolute = 5;
+    GiiPointerButtonEvent pointer_button_press = 6;
+    GiiPointerButtonEvent pointer_button_release = 7;
+    GiiValuatorEvent valuator_relative = 8;
+    GiiValuatorEvent valuator_absolute = 9;
+  }
+}
+
+// GII extension – client injects a batch of input events.
+message GiiInjectEvents {
+  bool big_endian = 1;
+  repeated GiiEvent events = 2;
+}
+
+// Wrapper for all GII client sub-messages.
+message GiiClientMessage {
+  oneof message {
+    GiiClientVersion version = 1;
+    GiiDeviceCreation device_creation = 2;
+    GiiDeviceDestruction device_destruction = 3;
+    GiiInjectEvents inject_events = 4;
+  }
+}
+
+// QEMU extension – extended key event carrying both a keysym and a scancode.
+message QemuExtendedKeyEvent {
+  // 1 = key pressed; 0 = key released.
+  int32 down_flag = 1;
+  // X11 keysym.
+  uint32 keysym = 2;
+  // XT scancode (hardware key identifier).
+  uint32 keycode = 3;
+}
+
+// QEMU audio extension – client enables audio capture.
+message QemuAudioClientEnable {}
+
+// QEMU audio extension – client disables audio capture.
+message QemuAudioClientDisable {}
+
+// QEMU audio extension – client configures the audio capture format.
+message QemuAudioClientSetFormat {
+  // Sample format code (e.g. 0 = U8, 1 = S8, 2 = U16, …).
+  int32 sample_format = 1;
+  int32 nchannels = 2;
+  // Sample rate in Hz.
+  uint64 frequency = 3;
+}
+
+// Wrapper for all QEMU audio client sub-messages.
+message QemuAudioClientMessage {
+  oneof type {
+    QemuAudioClientEnable enable = 1;
+    QemuAudioClientDisable disable = 2;
+    QemuAudioClientSetFormat set_format = 3;
+  }
+}
+
+// Wrapper for all QEMU client sub-messages.
+message QemuClientMessage {
+  oneof message {
+    QemuExtendedKeyEvent extended_key_event = 1;
+    QemuAudioClientMessage audio = 2;
+  }
+}
+
+// Union of every message the client may send after session initialisation.
+message ClientMessage {
+  oneof message {
+    SetPixelFormat set_pixel_format = 1;
+    SetEncodings set_encodings = 2;
+    FramebufferUpdateRequest framebuffer_update_request = 3;
+    KeyEvent key_event = 4;
+    PointerEvent pointer_event = 5;
+    ClientCutText client_cut_text = 6;
+    EnableContinuousUpdates enable_continuous_updates = 7;
+    ClientFence client_fence = 8;
+    SetDesktopSize set_desktop_size = 9;
+    XvpClientMessage xvp = 10;
+    GiiClientMessage gii = 11;
+    QemuClientMessage qemu = 12;
+  }
+}
+
+// ============================================================================
+// SERVICE — HANDSHAKE RPC WRAPPERS
+// ============================================================================
+
+// Request sent by the client to open a connection and begin version negotiation.
+message ConnectRequest {
+  ProtocolVersion client_version = 1;
+}
+
+// Server's reply to ConnectRequest.
+message ConnectResponse {
+  // The protocol version the server has chosen (≤ client_version).
+  ProtocolVersion server_version = 1;
+  // Security types the server is prepared to accept.
+  SecurityTypesAdvertisement security_types = 2;
+}
+
+// Client chooses a security type and (if required) supplies credentials.
+message AuthenticateRequest {
+  SecurityTypeSelection selection = 1;
+  // For VNC authentication (type 2): the 16-byte DES response to the server
+  // challenge.  Empty for security type None (type 1).
+  bytes auth_response = 2;
+}
+
+// Server's verdict after the authentication exchange.
+message AuthenticateResponse {
+  SecurityResult result = 1;
+}
+
+// Client declares its shared/exclusive intent.
+message InitializeRequest {
+  ClientInit client_init = 1;
+}
+
+// Server describes the initial desktop state.
+message InitializeResponse {
+  ServerInit server_init = 1;
+}
+
+// ============================================================================
+// SERVICE DEFINITION
+// ============================================================================
+
+// A gRPC translation of the RFB (VNC) protocol.
+//
+// Connection lifecycle:
+//
+//   1. Connect     – version negotiation; server advertises security types.
+//   2. Authenticate – client selects a security type and authenticates.
+//   3. Initialize  – client declares sharing intent; server sends desktop info.
+//   4. Session     – bidirectional stream of all subsequent messages.
+//
+// The first three phases map each RFB handshake exchange to a unary RPC so
+// that transport-level errors surface clearly before the main stream begins.
+// The fourth phase is a single bidirectional streaming RPC that carries every
+// client and server message defined in the RFB specification.
+service VncService {
+
+  // Phase 1: Version negotiation.
+  // The client proposes its highest supported RFB version; the server responds
+  // with the version it will use and the security types it accepts.
+  rpc Connect(ConnectRequest) returns (ConnectResponse);
+
+  // Phase 2: Authentication.
+  // The client selects a security type and provides any required credentials.
+  // The server returns OK or a failure reason.
+  rpc Authenticate(AuthenticateRequest) returns (AuthenticateResponse);
+
+  // Phase 3: Initialisation.
+  // The client declares whether the session should be shared; the server
+  // returns the framebuffer dimensions, pixel format, and desktop name.
+  rpc Initialize(InitializeRequest) returns (InitializeResponse);
+
+  // Phase 4: Main session.
+  // After initialisation, all traffic flows through this bidirectional stream.
+  //
+  // Client → server: SetPixelFormat, SetEncodings, FramebufferUpdateRequest,
+  //   KeyEvent, PointerEvent, ClientCutText, EnableContinuousUpdates,
+  //   ClientFence, SetDesktopSize, and extension messages (XVP, GII, QEMU).
+  //
+  // Server → client: FramebufferUpdate, SetColourMapEntries, Bell,
+  //   ServerCutText, EndOfContinuousUpdates, ServerFence, and extension
+  //   messages (XVP, GII, QEMU).
+  rpc Session(stream ClientMessage) returns (stream ServerMessage);
+}

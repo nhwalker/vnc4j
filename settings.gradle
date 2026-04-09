@@ -1,5 +1,13 @@
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'vnc4j'
 
 include 'vnc4j-protocol'
 include 'vnc4j-swing'
 include 'vnc4j-protocol-integration-tests'
+include 'vnc4j-grpc'
